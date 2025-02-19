@@ -576,9 +576,9 @@ class _HomePageState extends State<HomePage> {
                 ),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 1,
-                  mainAxisSpacing: 1,
-                  childAspectRatio: 0.97,
+                  crossAxisSpacing: 0,
+                  mainAxisSpacing: 0,
+                  childAspectRatio: 0.95,
                 ),
               ),
               // SliverToBoxAdapter(
@@ -600,8 +600,8 @@ class _HomePageState extends State<HomePage> {
                 ),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 1,
-                  mainAxisSpacing: 1,
+                  crossAxisSpacing: 0,
+                  mainAxisSpacing: 0,
                   childAspectRatio: 0.95,
                 ),
               ),
