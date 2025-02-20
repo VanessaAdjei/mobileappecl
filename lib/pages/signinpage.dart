@@ -1,7 +1,13 @@
-import 'package:eclapp/pages/createaccount.dart';
-import 'package:eclapp/pages/homepage.dart';
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
+import 'package:eclapp/pages/Cart.dart';
+import 'package:eclapp/pages/profile.dart';
+import 'package:flutter/material.dart';
+import 'package:eclapp/pages/homepage.dart';
+import 'package:eclapp/pages/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'createaccount.dart'; // Create this service
 class SignInScreen extends StatefulWidget {
   SignInScreen({Key? key}) : super(key: key);
 
@@ -9,33 +15,88 @@ class SignInScreen extends StatefulWidget {
   _SignInScreenState createState() => _SignInScreenState();
 }
 
+
 class _SignInScreenState extends State<SignInScreen> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
-  void _togglePasswordVisibility() {
+
+  void _signIn(String email, String password) async {
     setState(() {
-      _obscurePassword = !_obscurePassword;
+      _isLoading = true; // Start loading
     });
-  }
 
-  void _signIn() {
-    if (_formKey.currentState!.validate()) {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? usersJson = prefs.getString('users');
+
+      print("Retrieved users JSON: $usersJson");
+
+      if (usersJson == null) {
+        _showError("No users found");
+        return;
+      }
+
+      Map<String, dynamic> users;
+      try {
+        users = jsonDecode(usersJson);
+      } catch (e) {
+        _showError("Corrupt user data");
+        return;
+      }
+
+      if (!users.containsKey(email)) {
+        _showError("Invalid email or password");
+        return;
+      }
+
+      var userData = users[email];
+
+      await prefs.setBool('isLoggedIn', true);
+      if (userData is! Map<String, dynamic>) {
+        _showError("Invalid user data format");
+        print("Invalid user data: $userData");
+        return;
+      }
+
+      if (userData["password"] != password) {
+        _showError("Invalid email or password");
+        return;
+      }
+
+      print("Login successful. Navigating to Cart page...");
+
+      // Save user details
+      String name = userData["name"];
+      await AuthService.saveUserDetails(name, email);
+
+      // Navigate to Cart
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomePage()),
+        MaterialPageRoute(builder: (context) => const Cart()),
       );
+    } catch (e) {
+      print("Error during sign-in: $e");
+      _showError("An error occurred during sign-in.");
+    } finally {
+      setState(() {
+        _isLoading = false; // Stop loading
+      });
     }
   }
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -48,19 +109,13 @@ class _SignInScreenState extends State<SignInScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 IconButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  icon: const Icon(Icons.arrow_back, color: Colors.black),
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(Icons.arrow_back, color: Colors.black),
                 ),
                 const SizedBox(height: 40),
                 const Text(
                   "Let's Get You\nSigned In",
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 40),
                 Card(
@@ -71,16 +126,16 @@ class _SignInScreenState extends State<SignInScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(30.0),
                     child: Form(
-                      key: _formKey,
+                      key: formKey,
                       child: Column(
                         children: [
                           TextFormField(
-                            controller: _emailController,
-                            decoration: const InputDecoration(
+                            controller: emailController,
+                            decoration: InputDecoration(
                               labelText: 'Email',
                               prefixIcon: Icon(Icons.email, color: Colors.green),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(10)),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                             keyboardType: TextInputType.emailAddress,
@@ -90,17 +145,18 @@ class _SignInScreenState extends State<SignInScreen> {
                               }
                               if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$')
                                   .hasMatch(value)) {
-                                return 'Please enter a valid email address';
+                                return 'Invalid email format';
                               }
                               return null;
                             },
                           ),
                           const SizedBox(height: 20),
                           TextFormField(
-                            controller: _passwordController,
+                            controller: passwordController,
+                            obscureText: _obscurePassword,
                             decoration: InputDecoration(
                               labelText: 'Password',
-                              prefixIcon: const Icon(Icons.lock, color: Colors.green),
+                              prefixIcon: Icon(Icons.lock, color: Colors.green),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscurePassword
@@ -108,13 +164,16 @@ class _SignInScreenState extends State<SignInScreen> {
                                       : Icons.visibility,
                                   color: Colors.green,
                                 ),
-                                onPressed: _togglePasswordVisibility,
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
                               ),
-                              border: const OutlineInputBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(10)),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            obscureText: _obscurePassword,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter your password';
@@ -124,7 +183,11 @@ class _SignInScreenState extends State<SignInScreen> {
                           ),
                           const SizedBox(height: 30),
                           ElevatedButton(
-                            onPressed: _signIn,
+                            onPressed: _isLoading
+                                ? null
+                                : () {
+                              _signIn(emailController.text.trim(), passwordController.text.trim());
+                            },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
                               minimumSize: const Size(double.infinity, 50),
@@ -132,7 +195,9 @@ class _SignInScreenState extends State<SignInScreen> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            child: const Text(
+                            child: _isLoading
+                                ? CircularProgressIndicator(color: Colors.white)
+                                : Text(
                               'Sign in',
                               style: TextStyle(
                                 color: Colors.white,
@@ -144,12 +209,10 @@ class _SignInScreenState extends State<SignInScreen> {
                           const SizedBox(height: 20),
                           TextButton(
                             onPressed: () {
-                              // Handle forgot password logic
+                              Navigator.pop(context, true);
                             },
-                            child: const Text(
-                              'Forgot your password?',
-                              style: TextStyle(color: Colors.blue),
-                            ),
+                            child: Text('Forgot your password?',
+                                style: TextStyle(color: Colors.blue)),
                           ),
                         ],
                       ),
@@ -167,7 +230,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
                       );
                     },
-                    child: const Text(
+                    child: Text(
                       'Create an account',
                       style: TextStyle(color: Colors.blue),
                     ),

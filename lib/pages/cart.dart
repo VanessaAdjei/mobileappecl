@@ -1,6 +1,10 @@
+import 'package:eclapp/pages/homepage.dart';
+import 'package:eclapp/pages/signinpage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'cartprovider.dart';
+
 class Cart extends StatefulWidget {
   const Cart({Key? key}) : super(key: key);
 
@@ -23,22 +27,54 @@ class _CartState extends State<Cart> {
   String? selectedStore;
 
   @override
+  void initState() {
+    super.initState();
+    // _checkLoginStatus();
+  }
+  void _checkLoginStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool? isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+
+    if (!isLoggedIn && mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => SignInScreen()),
+      );
+    }
+  }
+
+
+  void onHandleCheckout(BuildContext context) {
+    if (context.read<CartProvider>().cartItems.isNotEmpty) {
+      context.read<CartProvider>().purchaseItems();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Your cart is empty!")),
+      );
+    }
+  }
+
+
+
+
+
+  @override
   Widget build(BuildContext context) {
     return Consumer<CartProvider>(
-        builder: (context, cart, child) {
-          return WillPopScope(
-            onWillPop: () async {
-              Navigator.pop(context);
-              return Future.value(false);
-            },
-            child: Scaffold(
+      builder: (context, cart, child)
+    {
+      return WillPopScope(
+          onWillPop: () async {
+            Navigator.pop(context);
+            return false;
+          },
+          child: Scaffold(
               appBar: AppBar(
                 backgroundColor: Colors.green.shade600,
                 title: SizedBox(
                   height: 75,
                   width: 150,
                   child: Image.asset('assets/images/png.png'),
-
                 ),
                 leading: IconButton(
                   icon: Icon(Icons.arrow_back, color: Colors.white),
@@ -85,8 +121,8 @@ class _CartState extends State<Cart> {
                                   SizedBox(width: 16.0),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment
-                                          .start,
+                                      crossAxisAlignment:
+                                      CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           item.name,
@@ -114,7 +150,8 @@ class _CartState extends State<Cart> {
                                         onPressed: () {
                                           setState(() {
                                             if (item.quantity > 1) {
-                                              context.read<CartProvider>()
+                                              context
+                                                  .read<CartProvider>()
                                                   .updateQuantity(
                                                   index, item.quantity - 1);
                                             }
@@ -142,9 +179,9 @@ class _CartState extends State<Cart> {
                                     ),
                                     onPressed: () {
                                       setState(() {
-                                        context.read<CartProvider>()
-                                            .removeFromCart(
-                                            index);
+                                        context
+                                            .read<CartProvider>()
+                                            .removeFromCart(index);
                                       });
                                     },
                                   ),
@@ -168,8 +205,7 @@ class _CartState extends State<Cart> {
                           color: Colors.grey.withOpacity(0.2),
                           spreadRadius: 3,
                           blurRadius: 8,
-                          offset: Offset(
-                              0, -2),
+                          offset: Offset(0, -2),
                         ),
                       ],
                     ),
@@ -218,7 +254,6 @@ class _CartState extends State<Cart> {
                         ),
                         SizedBox(height: 16),
 
-
                         if (deliveryOption == 'Delivery') ...[
                           TextField(
                             controller: addressController,
@@ -239,114 +274,14 @@ class _CartState extends State<Cart> {
                               fillColor: Colors.grey.shade100,
                             ),
                           ),
-                        ] else
-                          ...[
-                            DropdownButtonFormField<String>(
-                              value: selectedRegion,
-                              hint: Text('Select Region'),
-                              isExpanded: true,
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedRegion = value;
-                                  selectedCity = null;
-                                  selectedStore = null;
-                                });
-                              },
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                      color: Colors.grey.shade400),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.green),
-                                ),
-                                filled: true,
-                                fillColor: Colors.grey.shade100,
-                              ),
-                              items: regions.map((region) {
-                                return DropdownMenuItem<String>(
-                                  value: region,
-                                  child: Text(region),
-                                );
-                              }).toList(),
-                            ),
-                            SizedBox(height: 12),
-
-
-                            if (selectedRegion != null) ...[
-                              DropdownButtonFormField<String>(
-                                value: selectedCity,
-                                hint: Text('Select City'),
-                                isExpanded: true,
-                                onChanged: (value) {
-                                  setState(() {
-                                    selectedCity = value;
-                                    selectedStore = null;
-                                  });
-                                },
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                        color: Colors.grey.shade400),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.green),
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.grey.shade100,
-                                ),
-                                items: cities.map((city) {
-                                  return DropdownMenuItem<String>(
-                                    value: city,
-                                    child: Text(city),
-                                  );
-                                }).toList(),
-                              ),
-                              SizedBox(height: 12),
-                            ],
-
-                            if (selectedCity != null) ...[
-                              DropdownButtonFormField<String>(
-                                value: selectedStore,
-                                hint: Text('Select Store'),
-                                isExpanded: true,
-                                onChanged: (value) {
-                                  setState(() {
-                                    selectedStore = value;
-                                  });
-                                },
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                        color: Colors.grey.shade400),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.green),
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.grey.shade100,
-                                ),
-                                items: stores.map((store) {
-                                  return DropdownMenuItem<String>(
-                                    value: store,
-                                    child: Text(store),
-                                  );
-                                }).toList(),
-                              ),
-                            ],
-                          ],
+                        ],
                         SizedBox(height: 20), // Added spacing
 
                         Column(
                           children: [
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment
+                                  .spaceBetween,
                               children: [
                                 Text(
                                   'Subtotal',
@@ -355,8 +290,8 @@ class _CartState extends State<Cart> {
                                       fontWeight: FontWeight.w600),
                                 ),
                                 Text(
-                                  '\₵${cart.calculateSubtotal().toStringAsFixed(
-                                      2)}',
+                                  '\₵${cart.calculateSubtotal()
+                                      .toStringAsFixed(2)}',
                                   style: TextStyle(
                                       fontSize: 16,
                                       color: Colors.grey.shade800),
@@ -365,7 +300,6 @@ class _CartState extends State<Cart> {
                             ),
                             SizedBox(height: 8),
                             if (deliveryOption == 'Delivery') ...[
-
                               Row(
                                 mainAxisAlignment: MainAxisAlignment
                                     .spaceBetween,
@@ -378,7 +312,6 @@ class _CartState extends State<Cart> {
                                   ),
                                   Text(
                                     '\₵${deliveryFee.toStringAsFixed(2)}',
-
                                     style: TextStyle(
                                         fontSize: 16,
                                         color: Colors.grey.shade800),
@@ -386,10 +319,10 @@ class _CartState extends State<Cart> {
                                 ],
                               ),
                               SizedBox(height: 8),
-
                             ],
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment
+                                  .spaceBetween,
                               children: [
                                 Text(
                                   'Total',
@@ -421,13 +354,24 @@ class _CartState extends State<Cart> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          onPressed: () {
-                            if (cart.cartItems.isNotEmpty) {
+                          onPressed: () async {
+                            SharedPreferences prefs = await SharedPreferences.getInstance();
+                            bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+
+                            if (!isLoggedIn) {
+
+                              bool? result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => SignInScreen()),
+                              );
+
+                              if (result == true) {
+                                context.read<CartProvider>().purchaseItems();
+                                context.read<CartProvider>().clearCart();
+                              }
+                            } else {
                               context.read<CartProvider>().purchaseItems();
-                              // Navigator.push(
-                              //   context,
-                              //   MaterialPageRoute(builder: (context) => PurchaseScreen()),
-                              // );
+                              context.read<CartProvider>().clearCart();
                             }
                           },
                           child: Text(
@@ -436,13 +380,9 @@ class _CartState extends State<Cart> {
                           ),
                         ),
 
+
                       ],
                     ),
-                  )
-                ],
-              ),
-            ),
-          );
-        }
-    );
-  }}
+                  ),
+                ])));});}}
+

@@ -1,7 +1,11 @@
+import 'dart:convert';
+import 'dart:convert';
 import 'package:eclapp/pages/completeregistration.dart';
 import 'package:eclapp/pages/signinpage.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'auth_service.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -14,10 +18,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _termsAgreed = false;
   bool _passwordVisible = false;
   bool _confirmPasswordVisible = false;
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
 
   late Future<Image> _logoImage;
 
@@ -28,9 +32,39 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<Image> _loadLogo() async {
-    await Future.delayed(Duration(seconds: 2));  // Simulate network or asset loading delay
+    await Future.delayed(Duration(seconds: 2));
     return Image.asset('assets/images/png.png');
   }
+
+
+
+  void _signUp(String name, String email, String password) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Retrieve stored users
+    Map<String, dynamic> users = prefs.containsKey('users')
+        ? jsonDecode(prefs.getString('users')!) as Map<String, dynamic>
+        : {};
+
+    if (users.containsKey(email)) {
+      _showError("User already exists");
+      return;
+    }
+
+    users[email] = {"password": password, "name": name};
+    await prefs.setString('users', jsonEncode(users));
+
+
+    // Save user session details
+    await AuthService.saveUserDetails(name, email);
+
+    // Navigate to the next screen
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => GetStartedScreen()),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -71,17 +105,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
               const SizedBox(height: 30),
-              _buildTextField('Your name', Icons.person_outline, _nameController),
+              _buildTextField('Your name', Icons.person_outline, nameController),
               const SizedBox(height: 20),
-              _buildTextField('Enter your email', Icons.email_outlined, _emailController, keyboardType: TextInputType.emailAddress),
+              _buildTextField('Enter your email', Icons.email_outlined, emailController, keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 20),
-              _buildPasswordField('Enter your password', Icons.lock_outline, _passwordController, _passwordVisible, () {
+              _buildPasswordField('Enter your password', Icons.lock_outline, passwordController, _passwordVisible, () {
                 setState(() {
                   _passwordVisible = !_passwordVisible;
                 });
               }),
               const SizedBox(height: 20),
-              _buildPasswordField('Confirm your password', Icons.lock_outline, _confirmPasswordController, _confirmPasswordVisible, () {
+              _buildPasswordField('Confirm your password', Icons.lock_outline, confirmPasswordController, _confirmPasswordVisible, () {
                 setState(() {
                   _confirmPasswordVisible = !_confirmPasswordVisible;
                 });
@@ -118,7 +152,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 child: ElevatedButton(
                   onPressed: _termsAgreed
                       ? () {
-                    _signUp();
+                    String name = nameController.text.trim();
+                    String email = emailController.text.trim();
+                    String password = passwordController.text.trim();
+
+                    if (name.isNotEmpty && email.isNotEmpty && password.isNotEmpty) {
+                      _signUp(name, email, password);
+                    } else {
+                      _showError("All fields are required");
+                    }
                   }
                       : null,
                   style: ElevatedButton.styleFrom(
@@ -153,25 +195,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  void _signUp() async {
-    // Validate the inputs
-    if (_passwordController.text != _confirmPasswordController.text) {
-      _showError("Passwords do not match");
-      return;
-    }
-
-    // Store user information locally (using SharedPreferences)
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('user_name', _nameController.text);
-    prefs.setString('user_email', _emailController.text);
-    prefs.setString('user_password', _passwordController.text);
-
-    // Navigate to the next screen
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => GetStartedScreen()),
-    );
-  }
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));

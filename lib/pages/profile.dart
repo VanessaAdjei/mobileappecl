@@ -1,13 +1,14 @@
-import 'package:eclapp/pages/loggedout.dart';
-import 'package:eclapp/pages/notifications.dart';
 import 'package:eclapp/pages/purchases.dart';
 import 'package:eclapp/pages/settings.dart';
+import 'package:eclapp/pages/signinpage.dart';
 import 'package:eclapp/pages/storelocation.dart';
 import 'package:flutter/material.dart';
-import 'CartItems.dart';
-import 'cart.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'Cart.dart';
+import 'auth_service.dart';
 import 'categorylist.dart';
 import 'homepage.dart';
+import 'notifications.dart';
 
 class Profile extends StatefulWidget {
   const Profile({Key? key}) : super(key: key);
@@ -17,6 +18,12 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
+  void _navigateTo(Widget screen) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => screen),
+    );
+  }
   int _selectedIndex = 3;
 
   void _onItemTapped(int index) {
@@ -43,6 +50,31 @@ class _ProfileState extends State<Profile> {
     }
   }
 
+
+  String _userName = "User";
+  String _userEmail = "No email available";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+
+  Future<void> _loadUserData() async {
+    String? name = await AuthService.getUserName();
+    String? email = await AuthService.getUserEmail();
+
+    print("Retrieved Name: $name");
+    print("Retrieved Email: $email");
+
+    setState(() {
+      _userName = name ?? "User";
+      _userEmail = email ?? "No email available";
+    });
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -50,7 +82,7 @@ class _ProfileState extends State<Profile> {
         Navigator.pop(context);
         return Future.value(false);
       },
-      child:  Scaffold(
+      child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.green.shade600,
           title: Image.asset('assets/images/png.png', height: 50),
@@ -76,12 +108,48 @@ class _ProfileState extends State<Profile> {
               const SizedBox(height: 24),
               _buildProfileOption(Icons.notifications_outlined, "Notifications", () => _navigateTo(NotificationsScreen())),
               _buildProfileOption(Icons.shopping_bag_outlined, "Purchases", () => _navigateTo(PurchaseScreen())),
-              _buildProfileOption(Icons.settings_outlined, "Settings", () => _navigateTo(SettingsScreen(toggleDarkMode: (bool value) {  },))),
-              _buildProfileOption(Icons.logout, "Logout", () => _navigateTo(LoggedOutScreen())),
+              _buildProfileOption(Icons.settings_outlined, "Settings", () => _navigateTo(SettingsScreen(toggleDarkMode: (bool value) {}))),
+            _buildProfileOption(Icons.logout, "Logout", () {
+              AuthService.signOut().then((_) {
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => SignInScreen()));
+              });
+            }
+
+        ),
             ],
           ),
         ),
-        bottomNavigationBar: _buildBottomNavigationBar(),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.green.shade700,
+          selectedItemColor: Colors.white,
+          unselectedItemColor: Colors.white70,
+          elevation: 8.0,
+          items: [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_cart),
+              label: 'Cart',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.category),
+              label: 'Categories',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person),
+              label: 'Profile',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.location_city_sharp),
+              label: 'Stores',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -111,14 +179,14 @@ class _ProfileState extends State<Profile> {
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Text(
-                "John Doe",
+                _userName,
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text(
-                "johndoe@example.com",
+                _userEmail,
                 style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
             ],
@@ -128,73 +196,16 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  Widget _buildProfileOption(IconData icon, String text, VoidCallback onTap) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(icon, color: Colors.green.shade700, size: 28),
-              const SizedBox(width: 16),
-              Text(
-                text,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
-              const Spacer(),
-              Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade600),
-            ],
-          ),
-        ),
-      ),
+  Widget _buildProfileOption(IconData icon, String title, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.green),
+      title: Text(title, style: TextStyle(fontSize: 16)),
+      trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+      onTap: onTap,
     );
   }
 
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      currentIndex: _selectedIndex,
-      onTap: _onItemTapped,
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: Colors.green.shade700,
-      selectedItemColor: Colors.white,
-      unselectedItemColor: Colors.white70,
-      elevation: 8.0,
-      items: [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.shopping_cart),
-          label: 'Cart',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.category),
-          label: 'Categories',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Profile',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.location_city_sharp),
-          label: 'Stores',
-        ),
-      ],
-    );
-  }
 
-  void _navigateTo(Widget screen) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => screen),
-    );
-  }
 }
+
+

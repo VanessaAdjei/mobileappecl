@@ -1,3 +1,4 @@
+import 'package:eclapp/pages/signinpage.dart';
 import 'package:flutter/material.dart';
 import 'package:eclapp/pages/CartItems.dart';
 import 'package:eclapp/pages/categorylist.dart';
@@ -64,6 +65,7 @@ class _MyAppState extends State<MyApp> {
         '/categories': (context) => CategoriesPage(),
         '/profile': (context) => const Profile(),
         '/aboutus': (context) => AboutUsScreen(),
+        '/signin': (context) => SignInScreen(),
         '/privacypolicy': (context) => PrivacyPolicyScreen(),
         '/termsandconditions': (context) => TermsAndConditionsScreen(),
         '/settings': (context) => SettingsScreen(toggleDarkMode: _toggleDarkMode),
