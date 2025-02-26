@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:eclapp/pages/addpayment.dart';
 import 'package:eclapp/pages/changepassword.dart';
 import 'package:eclapp/pages/privacypolicy.dart';
@@ -5,6 +6,7 @@ import 'package:eclapp/pages/profilescreen.dart';
 import 'package:eclapp/pages/tandc.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'auth_service.dart';
 import 'CartItems.dart';
 import 'aboutus.dart';
 import 'cart.dart';
@@ -19,7 +21,23 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _isDarkMode = false; // Track the dark mode status
+  bool _isDarkMode = false;
+  String? _profileImagePath;
+
+
+
+  Future<void> _loadUserData() async {
+    String? name = await AuthService.getUserName();
+    String? email = await AuthService.getUserEmail();
+    String? imagePath = await AuthService.getProfileImage(); // Retrieve saved image path
+
+    setState(() {
+      _userName = name ?? "User";
+      _userEmail = email ?? "No email available";
+      _profileImagePath = imagePath; // Store the profile image path
+    });
+  }
+
 
   // Toggle the dark mode
   void _toggleDarkMode(bool value) {
@@ -27,6 +45,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _isDarkMode = value;
     });
   }
+
+  String _userName = "User";
+  String _userEmail = "No email available";
+
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+
+  // Future<void> _loadUserData() async {
+  //   String? name = await AuthService.getUserName();
+  //   String? email = await AuthService.getUserEmail();
+  //
+  //   print("Retrieved Name: $name");
+  //   print("Retrieved Email: $email");
+  //
+  //   setState(() {
+  //     _userName = name ?? "User";
+  //     _userEmail = email ?? "No email available";
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -62,25 +104,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SizedBox(height: 20),
               Row(
                 children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundImage: AssetImage('assets/images/profile_image.png'),
-                  ),
+                  // CircleAvatar(
+                  //   radius: 30,
+                  //   backgroundImage: _profileImagePath != null && _profileImagePath!.isNotEmpty
+                  //       ? FileImage(File(_profileImagePath!)) // Use saved image
+                  //       : AssetImage('assets/images/profile_image.png') as ImageProvider,
+                  // ),
+
                   SizedBox(width: 16),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'John Doe',
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        _userName,
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
-                        'jdoe@gmail.com',
-                        style: TextStyle(color: Colors.grey),
+                        _userEmail,
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
                       ),
                     ],
                   ),

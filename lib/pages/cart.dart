@@ -3,6 +3,7 @@ import 'package:eclapp/pages/signinpage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'auth_service.dart';
 import 'cartprovider.dart';
 
 class Cart extends StatefulWidget {
@@ -33,7 +34,7 @@ class _CartState extends State<Cart> {
   }
   void _checkLoginStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool? isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
     if (!isLoggedIn && mounted) {
       Navigator.pushReplacement(
@@ -234,7 +235,7 @@ class _CartState extends State<Cart> {
                                   },
                                 ),
                                 Text('Delivery'),
-                                SizedBox(width: 16),
+                                SizedBox(width: 10),
                                 Radio<String>(
                                   value: 'Pickup',
                                   groupValue: deliveryOption,
@@ -275,8 +276,7 @@ class _CartState extends State<Cart> {
                             ),
                           ),
                         ],
-                        SizedBox(height: 20), // Added spacing
-
+                        SizedBox(height: 20),
                         Column(
                           children: [
                             Row(
@@ -354,33 +354,34 @@ class _CartState extends State<Cart> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          onPressed: () async {
-                            SharedPreferences prefs = await SharedPreferences.getInstance();
-                            bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+                            onPressed: () async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
-                            if (!isLoggedIn) {
+    if (!isLoggedIn) {
+    ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text("You need to sign in first.")),
+    );
+    bool? result = await Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => SignInScreen()),
+    );
 
-                              bool? result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => SignInScreen()),
-                              );
-
-                              if (result == true) {
-                                context.read<CartProvider>().purchaseItems();
-                                context.read<CartProvider>().clearCart();
-                              }
-                            } else {
-                              context.read<CartProvider>().purchaseItems();
-                              context.read<CartProvider>().clearCart();
-                            }
-                          },
-                          child: Text(
+    if (result == true) {
+    context.read<CartProvider>().purchaseItems();
+    context.read<CartProvider>().clearCart();
+    }
+    } else {
+    context.read<CartProvider>().purchaseItems();
+    context.read<CartProvider>().clearCart();
+    }
+    }
+    ,
+      child: Text(
                             'Checkout',
                             style: TextStyle(fontSize: 18, color: Colors.white),
                           ),
                         ),
-
-
                       ],
                     ),
                   ),

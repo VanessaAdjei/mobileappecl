@@ -1,3 +1,4 @@
+import 'package:eclapp/pages/Cart.dart';
 import 'package:eclapp/pages/homepage.dart';
 import 'package:flutter/material.dart';
 
@@ -42,12 +43,9 @@ class GetStartedScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => HomePage(
-
-                        ),
+                        builder: (context) => const Cart(),
                       ),
                     );
-                    // Handle "Get Started" button press
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,

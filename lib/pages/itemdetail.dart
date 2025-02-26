@@ -245,7 +245,7 @@ class _ItemPageState extends State<ItemPage> {
                               const SnackBar(content: Text('Added to cart')),
                             );
                           },
-                          borderRadius: BorderRadius.circular(10), // Match the Material's borderRadius
+                          borderRadius: BorderRadius.circular(10),
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(

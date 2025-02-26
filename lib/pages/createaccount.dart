@@ -1,11 +1,11 @@
 import 'dart:convert';
-import 'dart:convert';
 import 'package:eclapp/pages/completeregistration.dart';
 import 'package:eclapp/pages/signinpage.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'Cart.dart';
 import 'auth_service.dart';
+import 'otp.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -22,48 +22,71 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController phoneNumberController = TextEditingController();
 
   late Future<Image> _logoImage;
 
   @override
   void initState() {
     super.initState();
-    _logoImage = _loadLogo();
+    // _logoImage = _loadLogo();
   }
 
-  Future<Image> _loadLogo() async {
-    await Future.delayed(Duration(seconds: 2));
-    return Image.asset('assets/images/png.png');
-  }
+  // Future<void> _simulateLoading() async {
+  //   await Future.delayed(Duration(seconds: 1));
+  // }
 
 
+  void _signUp(String name, String email, String password, String confirmPassword, String phoneNumber) async {
+    if (password != confirmPassword) {
+      _showError("Passwords do not match");
+      return;
+    }
 
-  void _signUp(String name, String email, String password) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     // Retrieve stored users
-    Map<String, dynamic> users = prefs.containsKey('users')
-        ? jsonDecode(prefs.getString('users')!) as Map<String, dynamic>
-        : {};
+    String? storedUsersJson = prefs.getString('users');
+    Map<String, dynamic> users = storedUsersJson != null ? jsonDecode(storedUsersJson) : {};
 
+    // Check if user exists
     if (users.containsKey(email)) {
       _showError("User already exists");
       return;
     }
 
-    users[email] = {"password": password, "name": name};
+    // Save user details
+    users[email] = {
+      "name": name,
+      "password": password,
+      "phoneNumber": phoneNumber
+    };
+
     await prefs.setString('users', jsonEncode(users));
 
+    // Generate OTP
+    String otp = (100000 + (DateTime.now().millisecondsSinceEpoch % 900000)).toString();
+    await prefs.setString('otp_$email', otp);
 
-    // Save user session details
-    await AuthService.saveUserDetails(name, email);
+    // Simulating OTP sending
+    print("OTP sent to $email: $otp");
 
-    // Navigate to the next screen
+    // Clear input fields
+    nameController.clear();
+    emailController.clear();
+    passwordController.clear();
+    confirmPasswordController.clear();
+    phoneNumberController.clear();
+
+    // Navigate to OTP verification screen
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => GetStartedScreen()),
+      MaterialPageRoute(builder: (context) => OtpVerificationScreen(email: email, otp: otp)),
     );
   }
+
+
+
 
 
   @override
@@ -71,35 +94,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(5.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
-                child: FutureBuilder<Image>(
-                  future: _logoImage, // Lazy loading the image
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return CircularProgressIndicator(); // Placeholder until the image is loaded
-                    }
-                    if (snapshot.hasError) {
-                      return Text('Error loading logo');
-                    }
-                    return snapshot.data!;
-                  },
-                ),
+                child:Image.asset(
+                        'assets/images/png.png',
+                        height: 200,
+                        width: 200,
+                )
+
               ),
-              const SizedBox(height: 20),
               const Center(
                 child: Text(
                   'Welcome to the Enerst Chemist App',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Colors.green), // Green text
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Colors.green),
                 ),
               ),
-              const SizedBox(height: 10),
               const Center(
                 child: Text(
-                  'Sign up to manage appointments,\nclients, and services seamlessly.',
+                  'Sign up to shop our products seamlessly.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
@@ -108,6 +123,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               _buildTextField('Your name', Icons.person_outline, nameController),
               const SizedBox(height: 20),
               _buildTextField('Enter your email', Icons.email_outlined, emailController, keyboardType: TextInputType.emailAddress),
+              const SizedBox(height: 20),
+              _buildTextField('Enter your number', Icons.phone, phoneNumberController, keyboardType: TextInputType.number),
               const SizedBox(height: 20),
               _buildPasswordField('Enter your password', Icons.lock_outline, passwordController, _passwordVisible, () {
                 setState(() {
@@ -155,9 +172,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     String name = nameController.text.trim();
                     String email = emailController.text.trim();
                     String password = passwordController.text.trim();
+                    String confirmPassword = confirmPasswordController.text.trim();
+                    String phoneNumber = phoneNumberController.text.trim();
 
-                    if (name.isNotEmpty && email.isNotEmpty && password.isNotEmpty) {
-                      _signUp(name, email, password);
+                    if (name.isNotEmpty && email.isNotEmpty && password.isNotEmpty && phoneNumber.isNotEmpty) {
+                      _signUp(name, email, password, confirmPassword, phoneNumber);
                     } else {
                       _showError("All fields are required");
                     }
@@ -177,15 +196,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
               const SizedBox(height: 20),
               Center(
                 child: TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => SignInScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text('Already Have an account? Login', style: TextStyle(color: Colors.green)), // Green text
+                  onPressed: () async {
+                    String name = nameController.text.trim();
+                    String email = emailController.text.trim();
+                    String password = passwordController.text.trim();
+                    String confirmPassword = confirmPasswordController.text.trim();
+                    String phoneNumber = phoneNumberController.text.trim();
+
+                    bool success = await AuthService.signUp(name, email, password, phoneNumber);
+                      if (success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Sign-up successful! Redirecting..."))
+                        );
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => Cart()),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Email already exists. Please sign in."))
+                        );
+                      }
+                    },
+
+                    child: const Text('Already Have an account? Login', style: TextStyle(color: Colors.green)), // Green text
                 ),
               ),
             ],

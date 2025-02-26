@@ -1,8 +1,12 @@
+import 'dart:io';
 import 'package:eclapp/pages/purchases.dart';
 import 'package:eclapp/pages/settings.dart';
 import 'package:eclapp/pages/signinpage.dart';
 import 'package:eclapp/pages/storelocation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Cart.dart';
 import 'auth_service.dart';
@@ -50,29 +54,72 @@ class _ProfileState extends State<Profile> {
     }
   }
 
-
   String _userName = "User";
   String _userEmail = "No email available";
+  String? _profileImagePath;
+
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+
   }
 
 
   Future<void> _loadUserData() async {
-    String? name = await AuthService.getUserName();
-    String? email = await AuthService.getUserEmail();
-
-    print("Retrieved Name: $name");
-    print("Retrieved Email: $email");
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? name = prefs.getString(AuthService.userNameKey);
+    String? email = prefs.getString(AuthService.userEmailKey);
+    String? savedImagePath = prefs.getString('profile_image_path');
 
     setState(() {
       _userName = name ?? "User";
       _userEmail = email ?? "No email available";
+      _profileImagePath = savedImagePath;
     });
   }
+
+
+
+  Future<void> _pickImage() async {
+    var status = await Permission.storage.request();
+
+    if (status.isGranted) {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        File savedImage = await _saveImageToLocalStorage(File(image.path));
+        setState(() {
+          _profileImage = savedImage;
+        });
+      }
+    } else if (status.isDenied) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Permission denied. Please allow access from settings.")),
+      );
+    } else if (status.isPermanentlyDenied) {
+      openAppSettings();
+    }
+  }
+  Future<File> _saveImageToLocalStorage(File imageFile) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final savedImagePath = "${directory.path}/profile_image.png";
+
+    // Copy the selected image to local storage
+    final File savedImage = await imageFile.copy(savedImagePath);
+
+    // Save path to shared preferences
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('profile_image_path', savedImagePath);
+
+    return savedImage;
+  }
+
+
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
+
+
 
 
   @override
@@ -163,17 +210,24 @@ class _ProfileState extends State<Profile> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.green.shade100,
-            ),
-            child: const Icon(
-              Icons.person,
-              size: 40,
-              color: Colors.green,
+          GestureDetector(
+            onTap: _pickImage,
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.green.shade100,
+                image: _profileImagePath != null
+                    ? DecorationImage(
+                  image: FileImage(File(_profileImagePath!)),
+                  fit: BoxFit.cover,
+                )
+                    : null,
+              ),
+              child: _profileImagePath == null
+                  ? const Icon(Icons.person, size: 40, color: Colors.green)
+                  : null,
             ),
           ),
           const SizedBox(width: 16),
@@ -195,6 +249,7 @@ class _ProfileState extends State<Profile> {
       ),
     );
   }
+
 
   Widget _buildProfileOption(IconData icon, String title, VoidCallback onTap) {
     return ListTile(

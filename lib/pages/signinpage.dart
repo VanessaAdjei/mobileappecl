@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:eclapp/pages/Cart.dart';
 import 'package:eclapp/pages/profile.dart';
 import 'package:flutter/material.dart';
@@ -8,13 +7,13 @@ import 'package:eclapp/pages/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'createaccount.dart'; // Create this service
+
 class SignInScreen extends StatefulWidget {
   SignInScreen({Key? key}) : super(key: key);
 
   @override
   _SignInScreenState createState() => _SignInScreenState();
 }
-
 
 class _SignInScreenState extends State<SignInScreen> {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
@@ -23,24 +22,20 @@ class _SignInScreenState extends State<SignInScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
-
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
-
   void _signIn(String email, String password) async {
     setState(() {
-      _isLoading = true; // Start loading
+      _isLoading = true;
     });
 
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? usersJson = prefs.getString('users');
-
-      print("Retrieved users JSON: $usersJson");
 
       if (usersJson == null) {
         _showError("No users found");
@@ -65,7 +60,6 @@ class _SignInScreenState extends State<SignInScreen> {
       await prefs.setBool('isLoggedIn', true);
       if (userData is! Map<String, dynamic>) {
         _showError("Invalid user data format");
-        print("Invalid user data: $userData");
         return;
       }
 
@@ -74,60 +68,55 @@ class _SignInScreenState extends State<SignInScreen> {
         return;
       }
 
-      print("Login successful. Navigating to Cart page...");
-
-      // Save user details
       String name = userData["name"];
-      await AuthService.saveUserDetails(name, email);
+      String phoneNumber = userData["phone"] ?? "";
+      await AuthService.saveUserDetails(name, email, phoneNumber);
 
-      // Navigate to Cart
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const Cart()),
       );
     } catch (e) {
-      print("Error during sign-in: $e");
       _showError("An error occurred during sign-in.");
     } finally {
       setState(() {
-        _isLoading = false; // Stop loading
+        _isLoading = false;
       });
     }
   }
-
-
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Center(
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 IconButton(
                   onPressed: () => Navigator.pop(context),
                   icon: Icon(Icons.arrow_back, color: Colors.black),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 20),
                 const Text(
                   "Let's Get You\nSigned In",
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 20),
                 Card(
                   elevation: 6,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(30.0),
+                    padding: const EdgeInsets.all(20.0),
                     child: Form(
                       key: formKey,
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           TextFormField(
                             controller: emailController,
@@ -181,7 +170,7 @@ class _SignInScreenState extends State<SignInScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 30),
+                          const SizedBox(height: 20),
                           ElevatedButton(
                             onPressed: _isLoading
                                 ? null
@@ -206,7 +195,7 @@ class _SignInScreenState extends State<SignInScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 10),
                           TextButton(
                             onPressed: () {
                               Navigator.pop(context, true);
@@ -219,7 +208,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
                 Center(
                   child: TextButton(
                     onPressed: () {

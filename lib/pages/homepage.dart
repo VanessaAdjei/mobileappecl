@@ -88,6 +88,16 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+
+  void makePhoneCall(String phoneNumber) async {
+    final Uri callUri = Uri.parse("tel:$phoneNumber");
+    if (await canLaunchUrl(callUri)) {
+      await launchUrl(callUri);
+    } else {
+      throw "Could not launch $callUri";
+    }
+  }
+
   void _showContactOptions(String phoneNumber) {
     showModalBottomSheet(
       context: context,
@@ -106,6 +116,7 @@ class _HomePageState extends State<HomePage> {
                 onTap: () {
                   Navigator.pop(context);
                   _launchPhoneDialer(phoneNumber);
+                  makePhoneCall(phoneNumber);
                 },
               ),
               ListTile(
@@ -213,7 +224,7 @@ class _HomePageState extends State<HomePage> {
         ),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: 8), // Reduce padding here
           child: Row(
             children: popularProducts.map((product) {
               return GestureDetector(
@@ -221,7 +232,7 @@ class _HomePageState extends State<HomePage> {
                   print("Tapped on ${product['name']}");
                 },
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 16.0),
+                  padding: const EdgeInsets.only(right: 8), // Reduce spacing here
                   child: ClipOval(
                     child: Stack(
                       alignment: Alignment.center,
@@ -229,8 +240,8 @@ class _HomePageState extends State<HomePage> {
                         Image.asset(
                           product['image']!,
                           fit: BoxFit.contain,
-                          height: 100,
-                          width: 100,
+                          height: 80, // Adjust height
+                          width: 80,  // Adjust width
                         ),
                         Container(
                           decoration: BoxDecoration(
@@ -272,8 +283,9 @@ class _HomePageState extends State<HomePage> {
     });
 
     return Container(
-      padding: EdgeInsets.all(16),
-      height: 200,
+      padding: EdgeInsets.all(8),
+      height: 150,
+      // width: 150,
       child: PageView.builder(
         controller: _pageController,
         itemCount: imageUrls.length,
@@ -306,31 +318,29 @@ class _HomePageState extends State<HomePage> {
         );
       },
       child: Container(
-        width: 10,
-        padding: const EdgeInsets.all(0),
-        margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Image.asset(
               product['image']!,
-              height: 130,
+              height: 100, // Reduced height
               width: 350,
-              fit: BoxFit.fitWidth,
+              fit: BoxFit.cover,
             ),
-            const SizedBox(height: 1),
-            Text(
-              product['name']!,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.green[800],
+
+            Flexible(
+              child: Text(
+                product['name']!,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green[800],
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 0),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -361,7 +371,6 @@ class _HomePageState extends State<HomePage> {
                     );
                   },
                   icon: Icon(Icons.add_shopping_cart, color: Colors.green, size: 20.0),
-
                 ),
               ],
             ),
@@ -374,12 +383,11 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildContactRow(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(1.0),
+      padding: const EdgeInsets.all(8), // Reduce padding here
       child: Wrap(
-        spacing: 60,
+        spacing: 16, // Reduce spacing here
         alignment: WrapAlignment.center,
         children: [
-
           _buildContactItem(
             context,
             icon: Icon(Icons.location_on),
@@ -390,30 +398,8 @@ class _HomePageState extends State<HomePage> {
                 context,
                 MaterialPageRoute(builder: (context) => StoreSelectionPage()),
               );
-
             },
           ),
-
-          // Column(
-          //   mainAxisAlignment: MainAxisAlignment.center,
-          //   children: [
-          //     ElevatedButton(
-          //       style: ElevatedButton.styleFrom(
-          //         backgroundColor: Colors.green,
-          //         shape: CircleBorder(),
-          //         padding: EdgeInsets.all(10),
-          //       ),
-          //       onPressed: () => _showContactOptions("+233504518047"),
-          //       child: Icon(Icons.phone, size: 30, color: Colors.black),
-          //     ),
-          //     SizedBox(height: 8),
-          //     Text(
-          //       "Contact Us",
-          //       style: TextStyle(color: Colors.black),
-          //     ),
-          //   ],
-          // )
-
         ],
       ),
     );
@@ -512,7 +498,7 @@ class _HomePageState extends State<HomePage> {
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.only(top: 40),
+                            padding: const EdgeInsets.only(top: 70),
                             child: SizedBox(
                               height: 75,
                               width: 100,
@@ -564,6 +550,7 @@ class _HomePageState extends State<HomePage> {
               SliverToBoxAdapter(
                 child: _buildOrderMedicineCard(),
               ),
+
               SliverGrid(
                 delegate: SliverChildBuilderDelegate(
                       (context, index) {
@@ -578,7 +565,7 @@ class _HomePageState extends State<HomePage> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 0,
                   mainAxisSpacing: 0,
-                  childAspectRatio: 0.95,
+                  childAspectRatio: 1.2,
                 ),
               ),
               // SliverToBoxAdapter(
@@ -602,7 +589,7 @@ class _HomePageState extends State<HomePage> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 0,
                   mainAxisSpacing: 0,
-                  childAspectRatio: 0.95,
+                  childAspectRatio: 1.2,
                 ),
               ),
               SliverToBoxAdapter(
@@ -626,15 +613,15 @@ class _HomePageState extends State<HomePage> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 0,
                   mainAxisSpacing: 0,
-                  childAspectRatio: 0.95,
+                  childAspectRatio: 1.2,
                 ),
               ),
             ],
           ),
           // Add the "Contact Us" button here
           Positioned(
-            bottom: 20, // Adjust the position as needed
-            right: 20, // Adjust the position as needed
+            bottom: 20,
+            right: 20,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
