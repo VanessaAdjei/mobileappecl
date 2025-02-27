@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import 'CartItem.dart';
 import 'cart.dart';
 import 'cartprovider.dart';
+import 'clickableimage.dart';
 import 'itemdetail.dart';
 import 'categorylist.dart';
 import 'profile.dart';
@@ -133,8 +134,6 @@ class _HomePageState extends State<HomePage> {
       },
     );
   }
-
-
 
 
   int _selectedIndex = 0;
@@ -568,12 +567,12 @@ class _HomePageState extends State<HomePage> {
                   childAspectRatio: 1.2,
                 ),
               ),
-              // SliverToBoxAdapter(
-              //   child: Padding(
-              //     padding: const EdgeInsets.symmetric(vertical: 1.0),
-              //     child: _buildContactRow(context),
-              //   ),
-              // ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 1.0),
+                  child: ClickableImageRow(),
+                ),
+              ),
               SliverGrid(
                 delegate: SliverChildBuilderDelegate(
                       (context, index) {

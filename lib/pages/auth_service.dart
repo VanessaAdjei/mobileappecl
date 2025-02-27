@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
 
 class AuthService {
   static const String usersKey = "users";
@@ -11,12 +12,20 @@ class AuthService {
   static const String userPhoneNumberKey = "userPhoneNumber";
 
 
+  // **Hash password using SHA-256**
+  static String hashPassword(String password) {
+    var bytes = utf8.encode(password);
+    var digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
+
 
   static Future<void> clearAllUsers() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(usersKey); // Remove all stored users
-    await prefs.remove(loggedInUserKey); // Remove logged-in user
-    await prefs.remove(isLoggedInKey); // Remove login status
+    await prefs.remove(usersKey);
+    await prefs.remove(loggedInUserKey);
+    await prefs.remove(isLoggedInKey);
     await prefs.remove(userNameKey);
     await prefs.remove(userEmailKey);
     await prefs.remove(userPhoneNumberKey);
@@ -38,25 +47,25 @@ class AuthService {
       return false;  // User already exists
     }
 
+    // Hash the password before storing it
+    String hashedPassword = hashPassword(password);
+
     // Add new user
     users[email] = {
       "name": name,
       "email": email,
-      "password": password,
+      "password": hashedPassword,
       "phoneNumber": phoneNumber
     };
     await prefs.setString(usersKey, json.encode(users));
 
-    // **Automatically log in the user after successful sign-up**
-    await prefs.setString(loggedInUserKey, email);  // Store logged-in user's email
+    // Automatically log in the user after successful sign-up
+    await prefs.setString(loggedInUserKey, email);
     await prefs.setBool(isLoggedInKey, true);
     await saveUserDetails(name, email, phoneNumber);
 
     return true;
   }
-
-
-
 
   static Future<bool> signIn(String email, String password) async {
     final prefs = await SharedPreferences.getInstance();
@@ -68,20 +77,20 @@ class AuthService {
     Map<String, Map<String, String>> users =
     Map<String, Map<String, String>>.from(json.decode(usersData));
 
-    // Validate user
-    if (users.containsKey(email) && users[email]!['password'] == password) {
-      await prefs.setString(loggedInUserKey, email); // Store only email
-      await prefs.setBool(isLoggedInKey, true);
+    String hashedPassword = hashPassword(password);
 
-      // Ensure phone number exists before saving
+    // Validate user
+    if (users.containsKey(email) && users[email]!['password'] == hashedPassword) {
+      await prefs.setString(loggedInUserKey, email);
+      await prefs.setBool(isLoggedInKey, true);
       String phoneNumber = users[email]!['phoneNumber'] ?? "";
 
       await saveUserDetails(users[email]!['name']!, email, phoneNumber);
-
       return true;
     }
     return false;
   }
+
 
   static Future<void> saveProfileImage(String imagePath) async {
     final prefs = await SharedPreferences.getInstance();
@@ -114,7 +123,7 @@ class AuthService {
     Map<String, Map<String, String>> users =
     Map<String, Map<String, String>>.from(json.decode(usersData));
 
-    return users[email]; // Return the full user data
+    return users[email];
   }
 
 

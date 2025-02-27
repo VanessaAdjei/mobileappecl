@@ -105,10 +105,8 @@ class _ProfileState extends State<Profile> {
     final directory = await getApplicationDocumentsDirectory();
     final savedImagePath = "${directory.path}/profile_image.png";
 
-    // Copy the selected image to local storage
     final File savedImage = await imageFile.copy(savedImagePath);
 
-    // Save path to shared preferences
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('profile_image_path', savedImagePath);
 
@@ -203,60 +201,81 @@ class _ProfileState extends State<Profile> {
 
   Widget _buildProfileHeader() {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.green.shade50,
-        borderRadius: BorderRadius.circular(12),
+          color: Colors.green.shade50,
+          borderRadius: BorderRadius.circular(15)
       ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: _pickImage,
-            child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.green.shade100,
-                image: _profileImagePath != null
-                    ? DecorationImage(
-                  image: FileImage(File(_profileImagePath!)),
-                  fit: BoxFit.cover,
-                )
-                    : null,
-              ),
-              child: _profileImagePath == null
-                  ? const Icon(Icons.person, size: 40, color: Colors.green)
-                  : null,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: Card(
+        elevation: 0,
+        color: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
             children: [
-              Text(
-                _userName,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.green.shade100,
+                    image: _profileImagePath != null
+                        ? DecorationImage(image: FileImage(File(_profileImagePath!)), fit: BoxFit.cover)
+                        : null,
+                  ),
+                  child: _profileImagePath == null ? const Icon(Icons.person, size: 45, color: Colors.green) : null,
+                ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                _userEmail,
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_userName, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.green[800])),
+                    const SizedBox(height: 6),
+                    Text(_userEmail, style: TextStyle(fontSize: 16, color: Colors.grey.shade700)),
+                  ],
+                ),
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 
 
+
   Widget _buildProfileOption(IconData icon, String title, VoidCallback onTap) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.green),
-      title: Text(title, style: TextStyle(fontSize: 16)),
-      trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-      onTap: onTap,
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: Row( 
+            children: [
+              Icon(icon, color: Colors.green.shade700, size: 28),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18, // Larger font size
+                    fontWeight: FontWeight.w300,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios, size: 20, color: Colors.grey[600]), // Slightly larger arrow
+            ],
+          ),
+        ),
+      ),
     );
   }
 

@@ -55,10 +55,6 @@ class _CartState extends State<Cart> {
     }
   }
 
-
-
-
-
   @override
   Widget build(BuildContext context) {
     return Consumer<CartProvider>(
@@ -66,7 +62,7 @@ class _CartState extends State<Cart> {
     {
       return WillPopScope(
           onWillPop: () async {
-            Navigator.pop(context);
+            Navigator.pop(HomePage() as BuildContext);
             return false;
           },
           child: Scaffold(

@@ -1,16 +1,11 @@
 import 'dart:convert';
 import 'package:eclapp/pages/Cart.dart';
-import 'package:eclapp/pages/profile.dart';
 import 'package:flutter/material.dart';
-import 'package:eclapp/pages/homepage.dart';
 import 'package:eclapp/pages/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'createaccount.dart'; // Create this service
+import 'createaccount.dart';
 
 class SignInScreen extends StatefulWidget {
-  SignInScreen({Key? key}) : super(key: key);
-
   @override
   _SignInScreenState createState() => _SignInScreenState();
 }
@@ -42,35 +37,20 @@ class _SignInScreenState extends State<SignInScreen> {
         return;
       }
 
-      Map<String, dynamic> users;
-      try {
-        users = jsonDecode(usersJson);
-      } catch (e) {
-        _showError("Corrupt user data");
-        return;
-      }
+      Map<String, dynamic> users = jsonDecode(usersJson);
 
-      if (!users.containsKey(email)) {
+      // Print all users and passwords
+      // users.forEach((key, value) {
+      //   print("User: $key, Password: ${value['password']}");
+      // });
+
+      if (!users.containsKey(email) || users[email]["password"] != password) {
         _showError("Invalid email or password");
         return;
       }
-
-      var userData = users[email];
 
       await prefs.setBool('isLoggedIn', true);
-      if (userData is! Map<String, dynamic>) {
-        _showError("Invalid user data format");
-        return;
-      }
-
-      if (userData["password"] != password) {
-        _showError("Invalid email or password");
-        return;
-      }
-
-      String name = userData["name"];
-      String phoneNumber = userData["phone"] ?? "";
-      await AuthService.saveUserDetails(name, email, phoneNumber);
+      await AuthService.saveUserDetails(users[email]["name"], email, users[email]["phone"] ?? "");
 
       Navigator.pushReplacement(
         context,
@@ -85,138 +65,145 @@ class _SignInScreenState extends State<SignInScreen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: Icon(Icons.arrow_back, color: Colors.black),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  "Let's Get You\nSigned In",
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 20),
-                Card(
-                  elevation: 6,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
+      body: Stack(
+        children: [
+          // Background image covering the entire screen
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage("assets/images/background.png"),
+                fit: BoxFit.cover, // Ensures the image covers the entire screen
+              ),
+            ),
+          ),
+          // SafeArea to avoid system UI elements
+          SafeArea(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  SizedBox(height: 400),
+                  Text(
+                    "Let's Get You\nSigned In",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Form(
-                      key: formKey,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextFormField(
-                            controller: emailController,
-                            decoration: InputDecoration(
-                              labelText: 'Email',
-                              prefixIcon: Icon(Icons.email, color: Colors.green),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            keyboardType: TextInputType.emailAddress,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
-                              }
-                              if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                  .hasMatch(value)) {
-                                return 'Invalid email format';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 20),
-                          TextFormField(
-                            controller: passwordController,
-                            obscureText: _obscurePassword,
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              prefixIcon: Icon(Icons.lock, color: Colors.green),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                  color: Colors.green,
+                  SizedBox(height: 10),
+                  Card(
+                    elevation: 6,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Form(
+                        key: formKey,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            TextFormField(
+                              controller: emailController,
+                              decoration: InputDecoration(
+                                labelText: 'Email',
+                                prefixIcon: Icon(Icons.email, color: Colors.green),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                                onPressed: () {
-                                  setState(() {
-                                    _obscurePassword = !_obscurePassword;
-                                  });
+                              ),
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your email';
+                                }
+                                // if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}\$').hasMatch(value)) {
+                                //   return 'Invalid email format';
+                                // }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: 10),
+                            TextFormField(
+                              controller: passwordController,
+                              obscureText: _obscurePassword,
+                              decoration: InputDecoration(
+                                labelText: 'Password',
+                                prefixIcon: Icon(Icons.lock, color: Colors.green),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                    color: Colors.green,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  },
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your password';
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: 20),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _isLoading
+                                    ? null
+                                    : () {
+                                  if (formKey.currentState!.validate()) {
+                                    _signIn(emailController.text, passwordController.text);
+                                  }
                                 },
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your password';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 20),
-                          ElevatedButton(
-                            onPressed: _isLoading
-                                ? null
-                                : () {
-                              _signIn(emailController.text.trim(), passwordController.text.trim());
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              minimumSize: const Size(double.infinity, 50),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: _isLoading
+                                    ? CircularProgressIndicator(color: Colors.white)
+                                    : Text(
+                                  'Sign in',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
-                            child: _isLoading
-                                ? CircularProgressIndicator(color: Colors.white)
-                                : Text(
-                              'Sign in',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                            SizedBox(height: 10),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: Text(
+                                'Forgot your password?',
+                                style: TextStyle(color: Colors.blue),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context, true);
-                            },
-                            child: Text('Forgot your password?',
-                                style: TextStyle(color: Colors.blue)),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                Center(
-                  child: TextButton(
+                  SizedBox(height: 10),
+                  TextButton(
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => SignUpScreen(),
-                        ),
+                        MaterialPageRoute(builder: (context) => SignUpScreen()),
                       );
                     },
                     child: Text(
@@ -224,11 +211,12 @@ class _SignInScreenState extends State<SignInScreen> {
                       style: TextStyle(color: Colors.blue),
                     ),
                   ),
-                ),
-              ],
+                  Spacer(),
+                ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

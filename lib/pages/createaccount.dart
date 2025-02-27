@@ -29,13 +29,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   void initState() {
     super.initState();
-    // _logoImage = _loadLogo();
   }
-
-  // Future<void> _simulateLoading() async {
-  //   await Future.delayed(Duration(seconds: 1));
-  // }
-
 
   void _signUp(String name, String email, String password, String confirmPassword, String phoneNumber) async {
     if (password != confirmPassword) {
@@ -86,86 +80,89 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
 
-
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(5.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child:Image.asset(
-                        'assets/images/png.png',
-                        height: 200,
-                        width: 200,
-                )
-
-              ),
-              const Center(
-                child: Text(
-                  'Welcome to the Enerst Chemist App',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Colors.green),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.green.shade300, Colors.white],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Image.asset(
+              'assets/images/png.png',
+              height: 150,
+              width: 150,
+            ),
+            Column(
+              children: [
+                const Text(
+                  'Welcome to the Ernest Chemist App',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.green),
                 ),
-              ),
-              const Center(
-                child: Text(
+                const Text(
                   'Sign up to shop our products seamlessly.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
-              ),
-              const SizedBox(height: 30),
-              _buildTextField('Your name', Icons.person_outline, nameController),
-              const SizedBox(height: 20),
-              _buildTextField('Enter your email', Icons.email_outlined, emailController, keyboardType: TextInputType.emailAddress),
-              const SizedBox(height: 20),
-              _buildTextField('Enter your number', Icons.phone, phoneNumberController, keyboardType: TextInputType.number),
-              const SizedBox(height: 20),
-              _buildPasswordField('Enter your password', Icons.lock_outline, passwordController, _passwordVisible, () {
-                setState(() {
-                  _passwordVisible = !_passwordVisible;
-                });
-              }),
-              const SizedBox(height: 20),
-              _buildPasswordField('Confirm your password', Icons.lock_outline, confirmPasswordController, _confirmPasswordVisible, () {
-                setState(() {
-                  _confirmPasswordVisible = !_confirmPasswordVisible;
-                });
-              }),
-              const SizedBox(height: 10),
-              const Text(
-                'At least 8 characters\nAt least 1 number\nBoth upper and lower case letters',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              const SizedBox(height: 20),
-              Row(
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
                 children: [
-                  Checkbox(
-                    value: _termsAgreed,
-                    onChanged: (value) {
-                      setState(() {
-                        _termsAgreed = value!;
-                      });
-                    },
-                    activeColor: Colors.green, // Green checkbox
-                  ),
-                  Expanded(
-                    child: const Text(
-                      'By agreeing to the terms and conditions, you are\nentering into a legally binding contract with the service provider.',
-                      softWrap: true,
-                      style: TextStyle(fontSize: 12),
-                    ),
+                  _buildTextField('Your name', Icons.person_outline, nameController),
+                  const SizedBox(height: 10),
+                  _buildTextField('Enter your email', Icons.email_outlined, emailController, keyboardType: TextInputType.emailAddress),
+                  const SizedBox(height: 10),
+                  _buildTextField('Enter your number', Icons.phone, phoneNumberController, keyboardType: TextInputType.number),
+                  const SizedBox(height: 10),
+                  _buildPasswordField('Enter your password', Icons.lock_outline, passwordController, _passwordVisible, () {
+                    setState(() {
+                      _passwordVisible = !_passwordVisible;
+                    });
+                  }),
+                  const SizedBox(height: 10),
+                  _buildPasswordField('Confirm your password', Icons.lock_outline, confirmPasswordController, _confirmPasswordVisible, () {
+                    setState(() {
+                      _confirmPasswordVisible = !_confirmPasswordVisible;
+                    });
+                  }),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _termsAgreed,
+                        onChanged: (value) {
+                          setState(() {
+                            _termsAgreed = value!;
+                          });
+                        },
+                        activeColor: Colors.green,
+                      ),
+                      Expanded(
+                        child: const Text(
+                          'By agreeing to the terms and conditions, you are entering into a legally binding contract.',
+                          softWrap: true,
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
-              SizedBox(
-                width: double.infinity,
+            ),
+            SizedBox(
+              width: double.infinity,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: ElevatedButton(
                   onPressed: _termsAgreed
                       ? () {
@@ -183,7 +180,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   }
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green, // Green button
+                    backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     shape: RoundedRectangleBorder(
@@ -193,41 +190,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   child: const Text('Sign Up', style: TextStyle(fontSize: 16)),
                 ),
               ),
-              const SizedBox(height: 20),
-              Center(
-                child: TextButton(
-                  onPressed: () async {
-                    String name = nameController.text.trim();
-                    String email = emailController.text.trim();
-                    String password = passwordController.text.trim();
-                    String confirmPassword = confirmPasswordController.text.trim();
-                    String phoneNumber = phoneNumberController.text.trim();
-
-                    bool success = await AuthService.signUp(name, email, password, phoneNumber);
-                      if (success) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Sign-up successful! Redirecting..."))
-                        );
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => Cart()),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Email already exists. Please sign in."))
-                        );
-                      }
-                    },
-
-                    child: const Text('Already Have an account? Login', style: TextStyle(color: Colors.green)), // Green text
-                ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => SignInScreen()),
+                );
+              },
+              child: const Text(
+                'Already Have an account? Login',
+                style: TextStyle(color: Colors.green),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
+
 
 
   void _showError(String message) {
