@@ -1,10 +1,14 @@
 import 'package:eclapp/pages/homepage.dart';
+import 'package:eclapp/pages/profile.dart';
 import 'package:eclapp/pages/signinpage.dart';
+import 'package:eclapp/pages/storelocation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_service.dart';
+import 'bottomnav.dart';
 import 'cartprovider.dart';
+import 'categories.dart';
 
 class Cart extends StatefulWidget {
   const Cart({Key? key}) : super(key: key);
@@ -12,6 +16,8 @@ class Cart extends StatefulWidget {
   @override
   _CartState createState() => _CartState();
 }
+
+
 
 class _CartState extends State<Cart> {
   String deliveryOption = 'Delivery';
@@ -55,6 +61,32 @@ class _CartState extends State<Cart> {
     }
   }
 
+  int _selectedIndex = 1;
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+        Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
+        break;
+      case 1:
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const Cart()));
+        break;
+      case 2:
+        Navigator.push(context, MaterialPageRoute(builder: (context) => CategoryPage()));
+        break;
+      case 3:
+        Navigator.push(context, MaterialPageRoute(builder: (context) => Profile()));
+        break;
+      case 4:
+        Navigator.push(context, MaterialPageRoute(builder: (context) => StoreSelectionPage()));
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<CartProvider>(
@@ -66,20 +98,53 @@ class _CartState extends State<Cart> {
             return false;
           },
           child: Scaffold(
-              appBar: AppBar(
-                backgroundColor: Colors.green.shade600,
-                title: SizedBox(
-                  height: 75,
-                  width: 150,
-                  child: Image.asset('assets/images/png.png'),
+            appBar: AppBar(
+              backgroundColor: Colors.green.shade700,
+              elevation: 0,
+              centerTitle: true,
+              leading: Container(
+                margin: EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.green[400],
                 ),
-                leading: IconButton(
+                child: IconButton(
                   icon: Icon(Icons.arrow_back, color: Colors.white),
                   onPressed: () {
                     Navigator.pop(context);
                   },
                 ),
               ),
+              title: Text(
+                'Your Cart',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+              actions: [
+                // Container(
+                //   margin: EdgeInsets.only(right: 8.0),
+                //   decoration: BoxDecoration(
+                //     shape: BoxShape.circle,
+                //     color: Colors.green[700],
+                //
+                //   ),
+                //   child:          IconButton(
+                //     icon: Icon(Icons.shopping_cart, color: Colors.white),
+                //     onPressed: () {
+                //       Navigator.push(
+                //         context,
+                //         MaterialPageRoute(
+                //           builder: (context) => const Cart(),
+                //         ),
+                //       );
+                //     },
+                //   ),
+                // ),
+              ],
+            ),
               body: cart.cartItems.isEmpty
                   ? Center(
                 child: Text(
@@ -381,5 +446,8 @@ class _CartState extends State<Cart> {
                       ],
                     ),
                   ),
-                ])));});}}
+                ]),
+            bottomNavigationBar: const CustomBottomNav(currentIndex: 1),
+          )
+      );});}}
 

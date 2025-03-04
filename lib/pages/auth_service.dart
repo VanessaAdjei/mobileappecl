@@ -1,4 +1,3 @@
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
@@ -11,15 +10,11 @@ class AuthService {
   static const String userEmailKey = "userEmail";
   static const String userPhoneNumberKey = "userPhoneNumber";
 
-
-  // **Hash password using SHA-256**
   static String hashPassword(String password) {
     var bytes = utf8.encode(password);
     var digest = sha256.convert(bytes);
     return digest.toString();
   }
-
-
 
   static Future<void> clearAllUsers() async {
     final prefs = await SharedPreferences.getInstance();
@@ -32,25 +27,19 @@ class AuthService {
   }
 
 
-  /// **Sign Up a New User and Automatically Sign In**
   static Future<bool> signUp(String name, String email, String password, String phoneNumber) async {
     final prefs = await SharedPreferences.getInstance();
-
-    // Retrieve existing users or initialize an empty map
     String? usersData = prefs.getString(usersKey);
     Map<String, Map<String, String>> users = usersData != null
         ? Map<String, Map<String, String>>.from(json.decode(usersData))
         : {};
 
-    // Check if user already exists
     if (users.containsKey(email)) {
-      return false;  // User already exists
+      return false;
     }
 
-    // Hash the password before storing it
     String hashedPassword = hashPassword(password);
 
-    // Add new user
     users[email] = {
       "name": name,
       "email": email,
@@ -58,8 +47,7 @@ class AuthService {
       "phoneNumber": phoneNumber
     };
     await prefs.setString(usersKey, json.encode(users));
-
-    // Automatically log in the user after successful sign-up
+    await prefs.setString(userPhoneNumberKey, phoneNumber);
     await prefs.setString(loggedInUserKey, email);
     await prefs.setBool(isLoggedInKey, true);
     await saveUserDetails(name, email, phoneNumber);
@@ -70,7 +58,6 @@ class AuthService {
   static Future<bool> signIn(String email, String password) async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Retrieve stored users
     String? usersData = prefs.getString(usersKey);
     if (usersData == null) return false;
 
@@ -79,7 +66,6 @@ class AuthService {
 
     String hashedPassword = hashPassword(password);
 
-    // Validate user
     if (users.containsKey(email) && users[email]!['password'] == hashedPassword) {
       await prefs.setString(loggedInUserKey, email);
       await prefs.setBool(isLoggedInKey, true);
@@ -90,7 +76,6 @@ class AuthService {
     }
     return false;
   }
-
 
   static Future<void> saveProfileImage(String imagePath) async {
     final prefs = await SharedPreferences.getInstance();
@@ -107,6 +92,7 @@ class AuthService {
     await prefs.setString(userNameKey, name);
     await prefs.setString(userEmailKey, email);
     await prefs.setString(userPhoneNumberKey, phoneNumber);
+    await prefs.setString(userPhoneNumberKey, phoneNumber);
 
     print("Saved Data -> Name: $name, Email: $email, Phone: $phoneNumber");
   }
@@ -116,13 +102,11 @@ class AuthService {
     String? email = prefs.getString(loggedInUserKey);
     if (email == null) return null;
 
-    // Retrieve users data
     String? usersData = prefs.getString(usersKey);
     if (usersData == null) return null;
 
     Map<String, Map<String, String>> users =
     Map<String, Map<String, String>>.from(json.decode(usersData));
-
     return users[email];
   }
 
@@ -146,7 +130,6 @@ class AuthService {
   }
 
 
-
   static Future<bool> isUserSignedUp(String email) async {
     final prefs = await SharedPreferences.getInstance();
     String? usersData = prefs.getString(usersKey);
@@ -154,21 +137,17 @@ class AuthService {
     if (usersData == null) return false;
 
     try {
-      // Decode as Map<String, Map<String, String>>
       Map<String, dynamic> rawUsers = json.decode(usersData);
       Map<String, Map<String, String>> users = rawUsers.map(
             (key, value) => MapEntry(key, Map<String, String>.from(value)),
       );
 
-      // Ensure the user exists
       return users.containsKey(email);
     } catch (e) {
       print("Error decoding users data: $e");
       return false;
     }
   }
-
-
 
 
   static Future<String?> getUserName() async {
@@ -190,10 +169,13 @@ class AuthService {
     String? usersData = prefs.getString(usersKey);
     if (usersData == null) return null;
 
+    print("DEBUG: Email -> $email, Users Data -> $usersData");
+
+
     Map<String, Map<String, String>> users =
     Map<String, Map<String, String>>.from(json.decode(usersData));
+    return users[email]?['phoneNumber'];
 
-    return users[email]?['phoneNumber']; // Fetch from stored users
   }
 
 
@@ -202,5 +184,46 @@ class AuthService {
     String? usersData = prefs.getString(usersKey);
     print("DEBUG: Users Data: $usersData");
   }
+
+  static Future<bool> validateCurrentPassword(String currentPassword) async {
+    final prefs = await SharedPreferences.getInstance();
+    String? loggedInUser = prefs.getString(loggedInUserKey);
+
+    if (loggedInUser == null) return false;
+
+    String? usersData = prefs.getString(usersKey);
+    if (usersData == null) return false;
+
+    Map<String, Map<String, String>> users =
+    Map<String, Map<String, String>>.from(json.decode(usersData));
+
+    if (users.containsKey(loggedInUser)) {
+      String hashedPassword = hashPassword(currentPassword);
+      return users[loggedInUser]!['password'] == hashedPassword;
+    }
+    return false;
+  }
+
+  static Future<bool> updatePassword(String newPassword) async {
+    final prefs = await SharedPreferences.getInstance();
+    String? loggedInUser = prefs.getString(loggedInUserKey);
+
+    if (loggedInUser == null) return false;
+
+    String? usersData = prefs.getString(usersKey);
+    if (usersData == null) return false;
+
+    Map<String, Map<String, String>> users =
+    Map<String, Map<String, String>>.from(json.decode(usersData));
+
+    if (users.containsKey(loggedInUser)) {
+      String hashedNewPassword = hashPassword(newPassword);
+      users[loggedInUser]!['password'] = hashedNewPassword;
+      await prefs.setString(usersKey, json.encode(users));
+      return true;
+    }
+    return false;
+  }
+
 
 }

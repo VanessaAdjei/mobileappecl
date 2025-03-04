@@ -39,17 +39,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    // Retrieve stored users
     String? storedUsersJson = prefs.getString('users');
     Map<String, dynamic> users = storedUsersJson != null ? jsonDecode(storedUsersJson) : {};
 
-    // Check if user exists
     if (users.containsKey(email)) {
       _showError("User already exists");
       return;
     }
-
-    // Save user details
+    print("Phone Number: $phoneNumber");
     users[email] = {
       "name": name,
       "password": password,
@@ -72,7 +69,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     confirmPasswordController.clear();
     phoneNumberController.clear();
 
-    // Navigate to OTP verification screen
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => OtpVerificationScreen(email: email, otp: otp)),
@@ -83,6 +80,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -93,121 +91,124 @@ class _SignUpScreenState extends State<SignUpScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Image.asset(
-              'assets/images/png.png',
-              height: 150,
-              width: 150,
-            ),
-            Column(
-              children: [
-                const Text(
-                  'Welcome to the Ernest Chemist App',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.green),
-                ),
-                const Text(
-                  'Sign up to shop our products seamlessly.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Column(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Image.asset(
+                'assets/images/png.png',
+                height: 150,
+                width: 150,
+              ),
+              Column(
                 children: [
-                  _buildTextField('Your name', Icons.person_outline, nameController),
-                  const SizedBox(height: 10),
-                  _buildTextField('Enter your email', Icons.email_outlined, emailController, keyboardType: TextInputType.emailAddress),
-                  const SizedBox(height: 10),
-                  _buildTextField('Enter your number', Icons.phone, phoneNumberController, keyboardType: TextInputType.number),
-                  const SizedBox(height: 10),
-                  _buildPasswordField('Enter your password', Icons.lock_outline, passwordController, _passwordVisible, () {
-                    setState(() {
-                      _passwordVisible = !_passwordVisible;
-                    });
-                  }),
-                  const SizedBox(height: 10),
-                  _buildPasswordField('Confirm your password', Icons.lock_outline, confirmPasswordController, _confirmPasswordVisible, () {
-                    setState(() {
-                      _confirmPasswordVisible = !_confirmPasswordVisible;
-                    });
-                  }),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: _termsAgreed,
-                        onChanged: (value) {
-                          setState(() {
-                            _termsAgreed = value!;
-                          });
-                        },
-                        activeColor: Colors.green,
-                      ),
-                      Expanded(
-                        child: const Text(
-                          'By agreeing to the terms and conditions, you are entering into a legally binding contract.',
-                          softWrap: true,
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ],
+                  const Text(
+                    'Welcome to the Ernest Chemist App',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.green),
+                  ),
+                  const Text(
+                    'Sign up to shop our products seamlessly.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                 ],
               ),
-            ),
-            SizedBox(
-              width: double.infinity,
-              child: Padding(
+              Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: ElevatedButton(
-                  onPressed: _termsAgreed
-                      ? () {
-                    String name = nameController.text.trim();
-                    String email = emailController.text.trim();
-                    String password = passwordController.text.trim();
-                    String confirmPassword = confirmPasswordController.text.trim();
-                    String phoneNumber = phoneNumberController.text.trim();
-
-                    if (name.isNotEmpty && email.isNotEmpty && password.isNotEmpty && phoneNumber.isNotEmpty) {
-                      _signUp(name, email, password, confirmPassword, phoneNumber);
-                    } else {
-                      _showError("All fields are required");
-                    }
-                  }
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                child: Column(
+                  children: [
+                    _buildTextField('Your name', Icons.person_outline, nameController),
+                    const SizedBox(height: 10),
+                    _buildTextField('Enter your email', Icons.email_outlined, emailController, keyboardType: TextInputType.emailAddress),
+                    const SizedBox(height: 10),
+                    _buildTextField('Enter your number', Icons.phone, phoneNumberController, keyboardType: TextInputType.number),
+                    const SizedBox(height: 10),
+                    _buildPasswordField('Enter your password', Icons.lock_outline, passwordController, _passwordVisible, () {
+                      setState(() {
+                        _passwordVisible = !_passwordVisible;
+                      });
+                    }),
+                    const SizedBox(height: 10),
+                    _buildPasswordField('Confirm your password', Icons.lock_outline, confirmPasswordController, _confirmPasswordVisible, () {
+                      setState(() {
+                        _confirmPasswordVisible = !_confirmPasswordVisible;
+                      });
+                    }),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _termsAgreed,
+                          onChanged: (value) {
+                            setState(() {
+                              _termsAgreed = value!;
+                            });
+                          },
+                          activeColor: Colors.green,
+                        ),
+                        Expanded(
+                          child: const Text(
+                            'By agreeing to the terms and conditions, you are entering into a legally binding contract.',
+                            softWrap: true,
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  child: const Text('Sign Up', style: TextStyle(fontSize: 16)),
+                  ],
                 ),
               ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => SignInScreen()),
-                );
-              },
-              child: const Text(
-                'Already Have an account? Login',
-                style: TextStyle(color: Colors.green),
+              SizedBox(
+                width: double.infinity,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: ElevatedButton(
+                    onPressed: _termsAgreed
+                        ? () {
+                      String name = nameController.text.trim();
+                      String email = emailController.text.trim();
+                      String password = passwordController.text.trim();
+                      String confirmPassword = confirmPasswordController.text.trim();
+                      String phoneNumber = phoneNumberController.text.trim();
+
+                      if (name.isNotEmpty && email.isNotEmpty && password.isNotEmpty && phoneNumber.isNotEmpty) {
+                        _signUp(name, email, password, confirmPassword, phoneNumber);
+                      } else {
+                        _showError("All fields are required");
+                      }
+                    }
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('Sign Up', style: TextStyle(fontSize: 16)),
+                  ),
+                ),
               ),
-            ),
-          ],
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SignInScreen()),
+                  );
+                },
+                child: const Text(
+                  'Already Have an account? Login',
+                  style: TextStyle(color: Colors.green),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+
 
 
 

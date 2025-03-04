@@ -9,7 +9,7 @@ class ClickableImageRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 120, // Adjust height as needed
+      height: 100,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: imageUrls.length,
@@ -24,7 +24,7 @@ class ClickableImageRow extends StatelessWidget {
             },
             child: Container(
               margin: EdgeInsets.symmetric(horizontal: 8),
-              width: 420, // Adjust width as needed
+              width: 420,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
