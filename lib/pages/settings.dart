@@ -74,23 +74,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green.shade600,
-        title: SizedBox(
-          height: 75, // Your desired height
-          width: 150, // Your desired width
-          child: Image.asset('assets/images/png.png'),
+        backgroundColor: Colors.green.shade700,
+        elevation: 0,
+        centerTitle: true,
+        leading: Container(
+          margin: EdgeInsets.all(8.0),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.green[400],
+          ),
+          child: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+        ),
+        title: Text(
+          'Settings',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.shopping_cart, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>  const Cart(),
-                ),
-              );
-            },
+          Container(
+            margin: EdgeInsets.only(right: 8.0),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.green[700],
+
+            ),
+            child:          IconButton(
+              icon: Icon(Icons.shopping_cart, color: Colors.white),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const Cart(),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),

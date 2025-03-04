@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'Cart.dart';
 
 class PrescriptionUploadPage extends StatefulWidget {
   @override
@@ -56,15 +57,56 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Upload Prescription", style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
-        backgroundColor: Colors.green.shade600,
+        backgroundColor: Colors.green.shade700,
+        elevation: 0,
         centerTitle: true,
-        elevation: 1,
+        leading: Container(
+          margin: EdgeInsets.all(8.0),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.green[400],
+          ),
+          child: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+        ),
+        title: Text(
+          'Upload Your Prescription',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
+        ),
+        actions: [
+          Container(
+            margin: EdgeInsets.only(right: 8.0),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.green[700],
+            ),
+            child: IconButton(
+              icon: Icon(Icons.shopping_cart, color: Colors.white),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const Cart(),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
-      body: SingleChildScrollView( // Make the page scrollable
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -73,7 +115,24 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
               _buildUploadSection(),
               SizedBox(height: 5),
               if (_selectedImage != null) _buildSelectedImageSection(context),
-              SizedBox(height: 5),
+              SizedBox(height: 10),
+              if (_selectedImage != null) // Display Submit button only if an image is selected
+                ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _submitPrescription,
+                  icon: Icon(Icons.send, color: Colors.white),
+                  label: Text("Submit Prescription"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade700,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
+                    shadowColor: Colors.green.shade200,
+                  ),
+                ),
+              SizedBox(height: 20),
               _buildRequirementsSection(),
               SizedBox(height: 5),
               _buildSamplePrescriptionSection(),
@@ -87,9 +146,18 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
     );
   }
 
+  void _submitPrescription() {
+    if (_selectedImage != null) {
+      _showConfirmationSnackbar("Prescription submitted successfully!");
+    } else {
+      _showConfirmationSnackbar("Please upload a prescription first.");
+    }
+  }
+
+
   Widget _buildUploadSection() {
     return Card(
-      elevation: 4, // Slightly higher elevation for a modern look
+      elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
       ),
@@ -98,11 +166,10 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Title with an icon for better visual appeal
             Row(
               children: [
-                Icon(Icons.upload, size: 24, color: Colors.green.shade700), // Icon for upload
-                SizedBox(width: 10), // Spacing between icon and text
+                Icon(Icons.upload, size: 24, color: Colors.green.shade700),
+                SizedBox(width: 10),
                 Text(
                   "Upload Prescription",
                   style: TextStyle(
@@ -113,9 +180,8 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
                 ),
               ],
             ),
-            SizedBox(height: 20), // Spacing between title and button
+            SizedBox(height: 20),
 
-            // Upload Button
             ElevatedButton.icon(
               onPressed: _isLoading ? null : _chooseFromGallery,
               icon: _isLoading
@@ -127,7 +193,7 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
-                  : Icon(Icons.image, size: 24), // Larger icon size
+                  : Icon(Icons.image, size: 24),
               label: Text(
                 "Choose from Gallery",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
@@ -135,20 +201,20 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green.shade700,
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20), // More padding
+                padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12), // Slightly rounded corners
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                elevation: 2, // Add elevation to the button
-                shadowColor: Colors.green.shade200, // Subtle shadow
+                elevation: 2,
+                shadowColor: Colors.green.shade200,
               ),
             ),
 
-            SizedBox(height: 10), // Spacing below the button
+            SizedBox(height: 10),
 
-            // Optional: Add a subtitle for additional information
+
             Text(
-              "Supported formats: JPG, PNG, PDF (Max 10MB)",
+              "Supported formats: JPG, PNG",
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey.shade600,
@@ -186,7 +252,7 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton.icon(
-              onPressed: _deleteImage, // Call the delete function
+              onPressed: _deleteImage,
               icon: Icon(Icons.delete, color: Colors.white),
               label: Text("Delete"),
               style: ElevatedButton.styleFrom(
@@ -196,7 +262,7 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
             ),
             SizedBox(width: 10), // Spacing
             ElevatedButton.icon(
-              onPressed: _chooseFromGallery, // Function to pick a new image
+              onPressed: _chooseFromGallery,
               icon: Icon(Icons.image, color: Colors.white),
               label: Text("Choose New"),
               style: ElevatedButton.styleFrom(

@@ -1,10 +1,11 @@
 import 'package:eclapp/pages/profile.dart';
+import 'package:eclapp/pages/storelocation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'CartItem.dart';
 import 'cart.dart';
-import 'cartitems.dart';
 import 'cartprovider.dart';
+import 'categories.dart';
 import 'categorylist.dart';
 import 'homepage.dart';
 import 'package:uuid/uuid.dart';
@@ -34,6 +35,40 @@ class _ItemPageState extends State<ItemPage> {
   int _selectedIndex = 0;
   final uuid = Uuid();
 
+
+  void showTopSnackBar(BuildContext context, String message) {
+    final overlay = Overlay.of(context);
+    final overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: 50, // Adjust this value to change the position
+        left: MediaQuery.of(context).size.width * 0.1,
+        width: MediaQuery.of(context).size.width * 0.8,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.black87,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+
+    Future.delayed(const Duration(seconds: 1), () {
+      overlayEntry.remove();
+    });
+  }
+
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -47,10 +82,13 @@ class _ItemPageState extends State<ItemPage> {
         Navigator.push(context, MaterialPageRoute(builder: (context) =>  const Cart()));
         break;
       case 2:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => CategoriesPage()));
+        Navigator.push(context, MaterialPageRoute(builder: (context) => CategoryPage()));
         break;
       case 3:
         Navigator.push(context, MaterialPageRoute(builder: (context) => Profile()));
+        break;
+      case 4:
+        Navigator.push(context, MaterialPageRoute(builder: (context) => StoreSelectionPage()));
         break;
     }
   }
@@ -67,23 +105,49 @@ class _ItemPageState extends State<ItemPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.green.shade600,
-          title: Image.asset('assets/images/png.png', height: 50),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pop(context);
-            },
+          backgroundColor: Colors.green.shade700,
+          elevation: 0,
+          centerTitle: true,
+          leading: Container(
+            margin: EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.green[400],
+            ),
+            child: IconButton(
+              icon: Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ),
+          title: Text(
+            widget.name,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+            ),
           ),
           actions: [
-            IconButton(
-              icon: Icon(Icons.shopping_cart, color: Colors.white),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) =>  const Cart())
-                );
-              },
+            Container(
+              margin: EdgeInsets.only(right: 8.0),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                  color: Colors.green[700],
+
+              ),
+              child:          IconButton(
+                icon: Icon(Icons.shopping_cart, color: Colors.white),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const Cart(),
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -241,9 +305,7 @@ class _ItemPageState extends State<ItemPage> {
                               quantity: quantity,
                             );
                             context.read<CartProvider>().addToCart(newItem);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Added to cart')),
-                            );
+                            showTopSnackBar(context, 'Added to cart');
                           },
                           borderRadius: BorderRadius.circular(10),
                           child: Container(
@@ -277,23 +339,12 @@ class _ItemPageState extends State<ItemPage> {
           selectedItemColor: Colors.white,
           unselectedItemColor: Colors.white70,
           elevation: 8.0,
-          items: [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart),
-              label: 'Cart',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.category),
-              label: 'Categories',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Profile',
-            ),
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+            BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Cart'),
+            BottomNavigationBarItem(icon: Icon(Icons.category), label: 'Categories'),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+            BottomNavigationBarItem(icon: Icon(Icons.location_city_sharp), label: 'Stores'),
           ],
         ),
       ),

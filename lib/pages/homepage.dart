@@ -1,3 +1,4 @@
+import 'package:eclapp/pages/categories.dart';
 import 'package:eclapp/pages/storelocation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -9,13 +10,10 @@ import 'cart.dart';
 import 'cartprovider.dart';
 import 'clickableimage.dart';
 import 'itemdetail.dart';
-import 'categorylist.dart';
 import 'profile.dart';
 import 'dart:async';
 
 class HomePage extends StatefulWidget {
-
-
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -135,7 +133,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
   int _selectedIndex = 0;
 
   void _onItemTapped(int index) {
@@ -151,7 +148,7 @@ class _HomePageState extends State<HomePage> {
         Navigator.push(context, MaterialPageRoute(builder: (context) => const Cart()));
         break;
       case 2:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => CategoriesPage()));
+        Navigator.push(context, MaterialPageRoute(builder: (context) => CategoryPage()));
         break;
       case 3:
         Navigator.push(context, MaterialPageRoute(builder: (context) => Profile()));
@@ -161,7 +158,6 @@ class _HomePageState extends State<HomePage> {
         break;
     }
   }
-
 
   void _filterProducts(String query) {
     setState(() {
@@ -190,6 +186,39 @@ class _HomePageState extends State<HomePage> {
       }
     });
   }
+  void showTopSnackBar(BuildContext context, String message) {
+    final overlay = Overlay.of(context);
+    final overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: 50, // Adjust this value to change the position
+        left: MediaQuery.of(context).size.width * 0.1,
+        width: MediaQuery.of(context).size.width * 0.8,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.black87,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+
+    // Remove after 2 seconds
+    Future.delayed(const Duration(seconds: 2), () {
+      overlayEntry.remove();
+    });
+  }
+
 
   @override
   void dispose() {
@@ -239,7 +268,7 @@ class _HomePageState extends State<HomePage> {
                         Image.asset(
                           product['image']!,
                           fit: BoxFit.contain,
-                          height: 80, // Adjust height
+                          height: 90, // Adjust height
                           width: 80,  // Adjust width
                         ),
                         Container(
@@ -316,22 +345,23 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       },
-      child: Container(
+      child: SizedBox(
+        width: 180, // Adjust width
+        height: 220, // Adjust height
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Image.asset(
               product['image']!,
-              height: 100, // Reduced height
-              width: 350,
+              height: 100,
+              width: 300,
               fit: BoxFit.cover,
             ),
-
             Flexible(
               child: Text(
                 product['name']!,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 14, // Reduce font size
                   fontWeight: FontWeight.bold,
                   color: Colors.green[800],
                 ),
@@ -346,7 +376,7 @@ class _HomePageState extends State<HomePage> {
                 Text(
                   product['price']!,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 12, // Reduce font size
                     fontWeight: FontWeight.w600,
                     color: Colors.black54,
                   ),
@@ -365,17 +395,16 @@ class _HomePageState extends State<HomePage> {
                     );
 
                     context.read<CartProvider>().addToCart(newItem);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Added to cart')),
-                    );
+                    showTopSnackBar(context, 'Added to cart');
                   },
-                  icon: Icon(Icons.add_shopping_cart, color: Colors.green, size: 20.0),
+                  icon: Icon(Icons.add_shopping_cart, color: Colors.green, size: 18.0),
                 ),
               ],
             ),
           ],
         ),
       ),
+
     );
   }
 
@@ -468,7 +497,7 @@ class _HomePageState extends State<HomePage> {
                 floating: false,
                 automaticallyImplyLeading: false,
                 pinned: true,
-                backgroundColor: Colors.green.shade600,
+                backgroundColor: Colors.green.shade700,
                 flexibleSpace: LayoutBuilder(
                   builder: (context, constraints) {
                     return FlexibleSpaceBar(
@@ -497,9 +526,9 @@ class _HomePageState extends State<HomePage> {
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.only(top: 70),
+                            padding: const EdgeInsets.only(top: 50),
                             child: SizedBox(
-                              height: 75,
+                              height: 110,
                               width: 100,
                               child: Image.asset(
                                 'assets/images/png.png',
@@ -513,22 +542,30 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
                 actions: [
-                  IconButton(
-                    icon: Icon(Icons.shopping_cart, color: Colors.white),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const Cart(),
-                        ),
-                      );
-                    },
+                  Container(
+                    margin: EdgeInsets.only(right: 0.0),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.green[700],
+
+                    ),
+                    child: IconButton(
+                      icon: Icon(Icons.shopping_cart, color: Colors.white),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const Cart(),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
                   child: TextField(
                     controller: searchController,
                     decoration: InputDecoration(
@@ -537,9 +574,7 @@ class _HomePageState extends State<HomePage> {
                       prefixIcon: Icon(Icons.search, color: Colors.black),
                       filled: true,
                       fillColor: Colors.white,
-                      contentPadding: EdgeInsets.symmetric(vertical: 0),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30),
                         borderSide: BorderSide.none,
                       ),
                     ),
@@ -628,16 +663,12 @@ class _HomePageState extends State<HomePage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     shape: CircleBorder(),
-                    padding: EdgeInsets.all(10), // Adjust padding for the circle size
+                    padding: EdgeInsets.all(10),
                   ),
                   onPressed: () => _showContactOptions("+233504518047"),
                   child: Icon(Icons.phone, size: 30, color: Colors.black),
                 ),
                 SizedBox(height: 8), // Space between icon and text
-                Text(
-                  "Contact Us",
-                  style: TextStyle(color: Colors.black),
-                ),
               ],
             ),
           ),

@@ -12,9 +12,9 @@ class GetStartedScreen extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center, // Center content vertically
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Placeholder for the image/logo (replace with your actual image)
+
               Image.asset('assets/images/png.png', height: 100,),
               const SizedBox(height: 20),
               const Text(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'Cart.dart';
 import 'cartprovider.dart';
+import 'categories.dart';
 import 'categorylist.dart';
 import 'homepage.dart';
 
@@ -33,7 +34,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
         Navigator.push(context, MaterialPageRoute(builder: (context) => const Cart()));
         break;
       case 2:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => CategoriesPage()));
+        Navigator.push(context, MaterialPageRoute(builder: (context) => CategoryPage()));
         break;
       case 3:
         Navigator.push(context, MaterialPageRoute(builder: (context) => Profile()));
@@ -54,31 +55,49 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green.shade600,
-        title: Row(
-          children: [
-            SizedBox(
-              height: 75, // Your desired height
-              width: 100, // Your desired width
-              child: Image.asset('assets/images/png.png'),
-            ),
-
-          ],
+        backgroundColor: Colors.green.shade700,
+        elevation: 0,
+        centerTitle: true,
+        leading: Container(
+          margin: EdgeInsets.all(8.0),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.green[400],
+          ),
+          child: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
         ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+        title: Text(
+          'Your Purchases',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.shopping_cart, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
+          Container(
+            margin: EdgeInsets.only(right: 8.0),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.green[700],
+
+            ),
+            child:          IconButton(
+              icon: Icon(Icons.shopping_cart, color: Colors.white),
+              onPressed: () {
+                Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const Cart()));
-            },
+                  MaterialPageRoute(
+                    builder: (context) => const Cart(),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),

@@ -1,4 +1,3 @@
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
@@ -91,7 +90,6 @@ class AuthService {
     return false;
   }
 
-
   static Future<void> saveProfileImage(String imagePath) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('profile_image', imagePath);
@@ -107,7 +105,6 @@ class AuthService {
     await prefs.setString(userNameKey, name);
     await prefs.setString(userEmailKey, email);
     await prefs.setString(userPhoneNumberKey, phoneNumber);
-
     print("Saved Data -> Name: $name, Email: $email, Phone: $phoneNumber");
   }
 
@@ -116,13 +113,11 @@ class AuthService {
     String? email = prefs.getString(loggedInUserKey);
     if (email == null) return null;
 
-    // Retrieve users data
     String? usersData = prefs.getString(usersKey);
     if (usersData == null) return null;
 
     Map<String, Map<String, String>> users =
     Map<String, Map<String, String>>.from(json.decode(usersData));
-
     return users[email];
   }
 
@@ -154,13 +149,11 @@ class AuthService {
     if (usersData == null) return false;
 
     try {
-      // Decode as Map<String, Map<String, String>>
       Map<String, dynamic> rawUsers = json.decode(usersData);
       Map<String, Map<String, String>> users = rawUsers.map(
             (key, value) => MapEntry(key, Map<String, String>.from(value)),
       );
 
-      // Ensure the user exists
       return users.containsKey(email);
     } catch (e) {
       print("Error decoding users data: $e");
@@ -193,7 +186,7 @@ class AuthService {
     Map<String, Map<String, String>> users =
     Map<String, Map<String, String>>.from(json.decode(usersData));
 
-    return users[email]?['phoneNumber']; // Fetch from stored users
+    return users[email]?['phoneNumber'];
   }
 
 

@@ -1,4 +1,4 @@
-// Terms and Conditions Screen
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -8,7 +8,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Terms and Conditions'),
-        backgroundColor: Colors.green.shade600, // Optional: match the app's theme
+        backgroundColor: Colors.green.shade600,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
