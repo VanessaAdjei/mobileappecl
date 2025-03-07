@@ -6,15 +6,20 @@ import 'package:eclapp/pages/profilescreen.dart';
 import 'package:eclapp/pages/tandc.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_service.dart';
-import 'CartItems.dart';
 import 'aboutus.dart';
+import 'bottomnav.dart';
 import 'cart.dart';
 import 'loggedout.dart';
 import 'notifications.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({Key? key, required void Function(bool value) toggleDarkMode}) : super(key: key);
+  const SettingsScreen({Key? key, required this.toggleDarkMode}) : super(key: key);
+  final void Function(bool value) toggleDarkMode;
 
   @override
   _SettingsScreenState createState() => _SettingsScreenState();
@@ -22,53 +27,72 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isDarkMode = false;
-  String? _profileImagePath;
-
-
-
-  Future<void> _loadUserData() async {
-    String? name = await AuthService.getUserName();
-    String? email = await AuthService.getUserEmail();
-    String? imagePath = await AuthService.getProfileImage(); // Retrieve saved image path
-
-    setState(() {
-      _userName = name ?? "User";
-      _userEmail = email ?? "No email available";
-      _profileImagePath = imagePath; // Store the profile image path
-    });
-  }
-
-
-  // Toggle the dark mode
-  void _toggleDarkMode(bool value) {
-    setState(() {
-      _isDarkMode = value;
-    });
-  }
-
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
   String _userName = "User";
   String _userEmail = "No email available";
-
+  String? _profileImagePath;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    // WidgetsBinding.instance.addPostFrameCallback((_) async {
+    //   await _loadProfileImage();
+    // });
   }
 
 
-  // Future<void> _loadUserData() async {
-  //   String? name = await AuthService.getUserName();
-  //   String? email = await AuthService.getUserEmail();
-  //
-  //   print("Retrieved Name: $name");
-  //   print("Retrieved Email: $email");
-  //
-  //   setState(() {
-  //     _userName = name ?? "User";
-  //     _userEmail = email ?? "No email available";
-  //   });
-  // }
+  Future<void> _loadUserData() async {
+    String? name = await AuthService.getUserName();
+    String? email = await AuthService.getUserEmail();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? imagePath = prefs.getString('profile_image_path');
+
+    setState(() {
+      _userName = name ?? "User";
+      _userEmail = email ?? "No email available";
+      _profileImagePath = imagePath;
+      if (_profileImagePath != null) {
+        _profileImage = File(_profileImagePath!);
+      }
+    });
+  }
+
+  Future<void> _pickImage() async {
+    var status = await Permission.storage.request();
+    if (status.isGranted) {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        File savedImage = await _saveImageToLocalStorage(File(image.path));
+        setState(() {
+          _profileImage = savedImage;
+        });
+      }
+    } else if (status.isDenied) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Permission denied. Please allow access from settings.")),
+      );
+    } else if (status.isPermanentlyDenied) {
+      openAppSettings();
+    }
+  }
+
+  Future<File> _saveImageToLocalStorage(File imageFile) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final savedImagePath = "${directory.path}/profile_image.png";
+    final File savedImage = await imageFile.copy(savedImagePath);
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('profile_image_path', savedImagePath);
+    return savedImage;
+  }
+
+  void _toggleDarkMode(bool value) {
+    setState(() {
+      _isDarkMode = value;
+    });
+    widget.toggleDarkMode(value);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,66 +101,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
         backgroundColor: Colors.green.shade700,
         elevation: 0,
         centerTitle: true,
-        leading: Container(
-          margin: EdgeInsets.all(8.0),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.green[400],
-          ),
-          child: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Settings',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black),
         ),
         actions: [
-          Container(
-            margin: EdgeInsets.only(right: 8.0),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.green[700],
-
-            ),
-            child:          IconButton(
-              icon: Icon(Icons.shopping_cart, color: Colors.white),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const Cart(),
-                  ),
-                );
-              },
-            ),
+          IconButton(
+            icon: Icon(Icons.shopping_cart, color: Colors.white),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const Cart())),
           ),
         ],
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(10.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // User Profile Section
-              SizedBox(height: 20),
+
               Row(
                 children: [
-                  // CircleAvatar(
-                  //   radius: 30,
-                  //   backgroundImage: _profileImagePath != null && _profileImagePath!.isNotEmpty
-                  //       ? FileImage(File(_profileImagePath!)) // Use saved image
-                  //       : AssetImage('assets/images/profile_image.png') as ImageProvider,
-                  // ),
-
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: CircleAvatar(
+                      radius: 35,
+                      backgroundColor: Colors.green.shade100,
+                      backgroundImage: _profileImage != null
+                          ? FileImage(_profileImage!)
+                          : _profileImagePath != null
+                          ? FileImage(File(_profileImagePath!))
+                          : const NetworkImage("https://via.placeholder.com/150") as ImageProvider,
+                      child: _profileImage == null ? const Icon(Icons.camera_alt, size: 30, color: Colors.white) : null,
+                    ),
+                  ),
                   SizedBox(width: 16),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,98 +155,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: 30),
-
-              // Account Settings Section
-              Container(
-                color: Colors.white,
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Account Settings',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    _buildSettingOption(context, "Edit profile", Icons.edit, ProfileScreen()),
-                    _buildSettingOption(context, "Change password", Icons.key, ChangePasswordPage()),
-                    _buildSettingOption(context, "Add a payment method", Icons.payment, AddPaymentPage()),
-                  ],
-                ),
-              ),
-
+              SizedBox(height: 10),
+              _buildSettingsSection("Account Settings", [
+                _buildSettingOption("Edit profile", Icons.edit, ProfileScreen()),
+                _buildSettingOption("Change password", Icons.key, ChangePasswordPage()),
+                _buildSettingOption("Add a payment method", Icons.payment, AddPaymentPage()),
+              ]),
+              SizedBox(height: 10),
+              _buildSettingsSection("General", [
+                _buildSettingOption("Push notifications", Icons.notifications, NotificationsScreen()),
+                _buildDarkModeToggle(),
+              ]),
+              SizedBox(height: 10),
+              _buildSettingsSection("More", [
+                _buildSettingOption("About us", Icons.info_outline, AboutUsScreen()),
+                _buildSettingOption("Privacy policy", Icons.lock_outline, PrivacyPolicyScreen()),
+                _buildSettingOption("Terms and conditions", Icons.description, TermsAndConditionsScreen()),
+              ]),
               SizedBox(height: 20),
-              // General Settings Section
-              Container(
-                color: Colors.white,
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start, // Align the children to the start (left)
-                  mainAxisAlignment: MainAxisAlignment.start, // Align the children at the start (top)
-                  children: [
-                    Text(
-                      'General',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    // Align the 'Push notifications' option to the start (left) with a little spacing
-                    Align(
-                      alignment: Alignment.centerLeft, // Align this item to the left
-                      child: _buildSettingOption(
-                        context,
-                        "Push notifications",
-                        Icons.notifications,
-                        NotificationsScreen(),
-                      ),
-                    ),
-                    // Align(
-                    //   alignment: Alignment.centerLeft, // Align this item to the left
-                    //   child: _buildDarkModeToggle(),
-                    // ),
-                  ],
-                ),
-              ),
-
-
-              SizedBox(height: 20),
-              // More Section
-              Container(
-                color: Colors.white,
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'More',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    _buildSettingOption(context, "About us", Icons.info_outline, AboutUsScreen()),
-                    _buildSettingOption(context, "Privacy policy", Icons.lock_outline, PrivacyPolicyScreen()),
-                    _buildSettingOption(context, "Terms and conditions", Icons.description, TermsAndConditionsScreen()),
-                  ],
-                ),
-              ),
-              SizedBox(height: 20),
-              // Logout Section
-              Container(
-                color: Colors.white,
-                padding: EdgeInsets.all(16),
-                child: _buildSettingOption(context, "Logout", Icons.logout, LoggedOutScreen()),
-              ),
+              _buildSettingOption("Logout", Icons.logout, LoggedOutScreen()),
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: const CustomBottomNav(currentIndex: 3),
+    );
+  }
+
+  Widget _buildSettingsSection(String title, List<Widget> options) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 10),
+          ...options,
+        ],
       ),
     );
   }
@@ -256,29 +206,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: Text("Dark Mode"),
       trailing: Switch(
         value: _isDarkMode,
-        onChanged: _toggleDarkMode, 
+        onChanged: _toggleDarkMode,
       ),
     );
   }
 
-
-  Widget _buildSettingOption(BuildContext context, String text, IconData icon, Widget destination) {
+  Widget _buildSettingOption(String text, IconData icon, Widget destination) {
     return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => destination),
-        );
-      },
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => destination)),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              text,
-              style: GoogleFonts.poppins(fontSize: 16),
-            ),
+            Text(text, style: GoogleFonts.poppins(fontSize: 16)),
             Icon(icon),
           ],
         ),
@@ -286,7 +227,3 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
-
-
-
-

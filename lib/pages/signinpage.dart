@@ -39,18 +39,21 @@ class _SignInScreenState extends State<SignInScreen> {
 
       Map<String, dynamic> users = jsonDecode(usersJson);
 
-      // Print all users and passwords
+      // Hash the input password
+      String hashedPassword = AuthService.hashPassword(password);
+
+      // Print all users and passwords (for debugging)
       // users.forEach((key, value) {
       //   print("User: $key, Password: ${value['password']}");
       // });
 
-      if (!users.containsKey(email) || users[email]["password"] != password) {
+      if (!users.containsKey(email) || users[email]["password"] != hashedPassword) {
         _showError("Invalid email or password");
         return;
       }
 
       await prefs.setBool('isLoggedIn', true);
-      await AuthService.saveUserDetails(users[email]["name"], email, users[email]["phone"] ?? "");
+      await AuthService.saveUserDetails(users[email]["name"], email, users[email]["phoneNumber"] ?? "");
 
       Navigator.pushReplacement(
         context,
@@ -64,7 +67,6 @@ class _SignInScreenState extends State<SignInScreen> {
       });
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -97,7 +99,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 20),  // <-- Added spacing
+                    SizedBox(height: 20),
                     Card(
                       color: Colors.transparent,
                       elevation: 6,
@@ -178,7 +180,7 @@ class _SignInScreenState extends State<SignInScreen> {
                                         ? null
                                         : () {
                                       if (formKey.currentState!.validate()) {
-                                        _signIn(emailController.text, passwordController.text);
+                                        _signIn(emailController.text.trim(), passwordController.text.trim());
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(
@@ -235,5 +237,4 @@ class _SignInScreenState extends State<SignInScreen> {
       ),
     );
   }
-
 }

@@ -1,3 +1,4 @@
+import 'package:eclapp/pages/auth_service.dart';
 import 'package:eclapp/pages/signinpage.dart';
 import 'package:flutter/material.dart';
 import 'package:eclapp/pages/CartItems.dart';
@@ -9,20 +10,32 @@ import 'package:eclapp/pages/profile.dart';
 import 'package:eclapp/pages/aboutus.dart';
 import 'package:eclapp/pages/privacypolicy.dart';
 import 'package:eclapp/pages/tandc.dart';
-import 'pages/notificationstate.dart';
 import 'package:eclapp/pages/settings.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'pages/notificationstate.dart';
 import 'pages/cartprovider.dart';
 
-void main() {
+void main() async {
+
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // // Perform async tasks before runApp
+  // await AuthService.clearAllUsers();
+  // await AuthService.signUp('Test 1',"test@example.com", "password123", '0000000000');
+  // await AuthService.signIn("test@example.com", "password123");
+  //
+  // bool isValid = await AuthService.validateCurrentPassword("password123");
+  // print("Is current password valid? $isValid");
+  //
+  // bool isChanged = await AuthService.updatePassword("newpassword123");
+  // print("Password changed successfully? $isChanged");
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => CartProvider()),
       ],
-      child: MyApp(),
+      child: const MyApp(),
     ),
   );
 }
@@ -58,10 +71,11 @@ class _MyAppState extends State<MyApp> {
         primarySwatch: Colors.green,
         brightness: Brightness.dark,
       ),
-      initialRoute: '/',
+      initialRoute: '/splashscreen',
       routes: {
+        '/splashscreen': (context) => SplashScreen(),
         '/': (context) => HomePage(),
-        '/cart': (context) =>  const Cart(),
+        '/cart': (context) => const Cart(),
         '/categories': (context) => CategoriesPage(),
         '/profile': (context) => const Profile(),
         '/aboutus': (context) => AboutUsScreen(),

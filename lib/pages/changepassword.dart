@@ -16,7 +16,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   bool _obscureCurrentPassword = true;
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
-
   String? _savedPassword;
 
   @override
@@ -31,8 +30,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     });
     print("Current Saved Password: $_savedPassword");
   }
-
-
 
   @override
   void dispose() {

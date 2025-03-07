@@ -10,6 +10,7 @@ class AuthService {
   static const String userEmailKey = "userEmail";
   static const String userPhoneNumberKey = "userPhoneNumber";
 
+
   static String hashPassword(String password) {
     var bytes = utf8.encode(password);
     var digest = sha256.convert(bytes);
@@ -27,55 +28,71 @@ class AuthService {
   }
 
 
+  // Sign up a new user
   static Future<bool> signUp(String name, String email, String password, String phoneNumber) async {
-    final prefs = await SharedPreferences.getInstance();
-    String? usersData = prefs.getString(usersKey);
-    Map<String, Map<String, String>> users = usersData != null
-        ? Map<String, Map<String, String>>.from(json.decode(usersData))
-        : {};
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? usersJson = prefs.getString(usersKey);
+    Map<String, dynamic> users = usersJson != null ? json.decode(usersJson) : {};
 
+    // Trim and lowercase the email
+    email = email.trim().toLowerCase();
+
+    // Check if the user already exists
     if (users.containsKey(email)) {
+      print("User already exists: $email");
       return false;
     }
 
+    // Hash the password
     String hashedPassword = hashPassword(password);
+    print("Hashed Password: $hashedPassword");
 
+    // Add the new user to the users map
     users[email] = {
       "name": name,
       "email": email,
       "password": hashedPassword,
       "phoneNumber": phoneNumber
     };
-    await prefs.setString(usersKey, json.encode(users));
-    await prefs.setString(userPhoneNumberKey, phoneNumber);
-    await prefs.setString(loggedInUserKey, email);
-    await prefs.setBool(isLoggedInKey, true);
-    await saveUserDetails(name, email, phoneNumber);
 
+    // Save the updated users map to SharedPreferences
+    bool saveStatus = await prefs.setString(usersKey, json.encode(users));
+    print("Sign-Up Save Status: $saveStatus");
+    print("Stored Users after Sign-Up: ${json.encode(users)}");
+
+    return saveStatus;
+
+    print("User signed up successfully: $email");
     return true;
   }
 
+
+
   static Future<bool> signIn(String email, String password) async {
-    final prefs = await SharedPreferences.getInstance();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? usersJson = prefs.getString(usersKey);
+    Map<String, dynamic> users = usersJson != null ? json.decode(usersJson) : {};
 
-    String? usersData = prefs.getString(usersKey);
-    if (usersData == null) return false;
-
-    Map<String, Map<String, String>> users =
-    Map<String, Map<String, String>>.from(json.decode(usersData));
-
+    email = email.trim().toLowerCase();
     String hashedPassword = hashPassword(password);
+    print("Attempting Sign-In for Email: $email");
 
-    if (users.containsKey(email) && users[email]!['password'] == hashedPassword) {
-      await prefs.setString(loggedInUserKey, email);
-      await prefs.setBool(isLoggedInKey, true);
-      String phoneNumber = users[email]!['phoneNumber'] ?? "";
-
-      await saveUserDetails(users[email]!['name']!, email, phoneNumber);
-      return true;
+    if (!users.containsKey(email)) {
+      print("Email not found.");
+      return false;
     }
-    return false;
+
+    if (users[email]["password"] != hashedPassword) {
+      print("Incorrect password.");
+      return false;
+    }
+
+    print("Sign-In Successful!");
+    await prefs.setBool(isLoggedInKey, true);
+    await prefs.setString(loggedInUserKey, email);
+    return true;
   }
+
 
   static Future<void> saveProfileImage(String imagePath) async {
     final prefs = await SharedPreferences.getInstance();
@@ -91,7 +108,6 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(userNameKey, name);
     await prefs.setString(userEmailKey, email);
-    await prefs.setString(userPhoneNumberKey, phoneNumber);
     await prefs.setString(userPhoneNumberKey, phoneNumber);
 
     print("Saved Data -> Name: $name, Email: $email, Phone: $phoneNumber");
@@ -160,24 +176,23 @@ class AuthService {
     return prefs.getString(userEmailKey);
   }
 
-
   static Future<String?> getUserPhoneNumber() async {
     final prefs = await SharedPreferences.getInstance();
+
     String? email = prefs.getString(loggedInUserKey);
-    if (email == null) return null;
-
-    String? usersData = prefs.getString(usersKey);
-    if (usersData == null) return null;
-
-    print("DEBUG: Email -> $email, Users Data -> $usersData");
-
-
-    Map<String, Map<String, String>> users =
-    Map<String, Map<String, String>>.from(json.decode(usersData));
-    return users[email]?['phoneNumber'];
-
+    if (email != null) {
+      String? usersData = prefs.getString(usersKey);
+      if (usersData != null) {
+        Map<String, Map<String, String>> users =
+        Map<String, Map<String, String>>.from(json.decode(usersData));
+        String? phoneNumber = users[email]?['phoneNumber'];
+        if (phoneNumber != null) {
+          return phoneNumber;
+        }
+      }
+    }
+    return prefs.getString(userPhoneNumberKey);
   }
-
 
   static Future<void> debugPrintUserData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -185,45 +200,47 @@ class AuthService {
     print("DEBUG: Users Data: $usersData");
   }
 
-  static Future<bool> validateCurrentPassword(String currentPassword) async {
-    final prefs = await SharedPreferences.getInstance();
-    String? loggedInUser = prefs.getString(loggedInUserKey);
 
-    if (loggedInUser == null) return false;
-
-    String? usersData = prefs.getString(usersKey);
-    if (usersData == null) return false;
-
-    Map<String, Map<String, String>> users =
-    Map<String, Map<String, String>>.from(json.decode(usersData));
-
-    if (users.containsKey(loggedInUser)) {
-      String hashedPassword = hashPassword(currentPassword);
-      return users[loggedInUser]!['password'] == hashedPassword;
+  static Future<bool> validateCurrentPassword(String password) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userEmail = prefs.getString(loggedInUserKey);  // Updated key
+    if (userEmail != null) {
+      String? storedUserJson = prefs.getString(usersKey);
+      if (storedUserJson != null) {
+        Map<String, dynamic> users = Map<String, dynamic>.from(jsonDecode(storedUserJson));
+        if (users.containsKey(userEmail)) {
+          String storedHash = users[userEmail]['password'];
+          String inputHash = hashPassword(password);
+          print("Entered Hashed Password: $inputHash");
+          print("Stored Hashed Password: $storedHash");
+          return storedHash == inputHash;
+        }
+      }
     }
     return false;
   }
 
   static Future<bool> updatePassword(String newPassword) async {
-    final prefs = await SharedPreferences.getInstance();
-    String? loggedInUser = prefs.getString(loggedInUserKey);
-
-    if (loggedInUser == null) return false;
-
-    String? usersData = prefs.getString(usersKey);
-    if (usersData == null) return false;
-
-    Map<String, Map<String, String>> users =
-    Map<String, Map<String, String>>.from(json.decode(usersData));
-
-    if (users.containsKey(loggedInUser)) {
-      String hashedNewPassword = hashPassword(newPassword);
-      users[loggedInUser]!['password'] = hashedNewPassword;
-      await prefs.setString(usersKey, json.encode(users));
-      return true;
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userEmail = prefs.getString(loggedInUserKey);  // Updated key
+    if (userEmail != null) {
+      String? storedUserJson = prefs.getString(usersKey);
+      if (storedUserJson != null) {
+        Map<String, dynamic> users = Map<String, dynamic>.from(jsonDecode(storedUserJson));
+        if (users.containsKey(userEmail)) {
+          String newHashedPassword = hashPassword(newPassword);
+          users[userEmail]['password'] = newHashedPassword;
+          await prefs.setString(usersKey, jsonEncode(users));
+          print("Password updated for $userEmail");
+          return true;
+        }
+      }
     }
+    print("Password update failed for $userEmail");
     return false;
   }
+
+
 
 
 }

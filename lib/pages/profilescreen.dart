@@ -1,4 +1,3 @@
-import 'package:eclapp/pages/changepassword.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
@@ -20,12 +19,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isEditinguserEmail = false;
   bool _isEditingPhoneNumber = false;
 
-
   String _userName = "User";
   String _userEmail = "No email available";
   String _phoneNumber = "";
   String? _profileImagePath;
 
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
+
+  late TextEditingController _userNameController;
+  late TextEditingController _userEmailController;
+  late TextEditingController _phoneNumberController;
 
   @override
   void initState() {
@@ -35,11 +39,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _phoneNumberController = TextEditingController(text: _phoneNumber);
     _loadUserData();
     _loadProfileImage();
+    _checkStoragePermission();
   }
 
+  Future<void> _checkStoragePermission() async {
+    var status = await Permission.storage.status;
+    if (!status.isGranted) {
+      await Permission.storage.request();
+    }
+  }
 
   Future<void> _pickImage() async {
-    var status = await Permission.storage.request();
+    var status = await Permission.storage.status;
     if (!status.isGranted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Permission denied. Please allow access from settings.")),
@@ -61,38 +72,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<File> _saveImageToLocalStorage(File imageFile) async {
     final directory = await getApplicationDocumentsDirectory();
     final savedImagePath = "${directory.path}/profile_image.png";
-
-    // Copy the selected image to local storage
     final File savedImage = await imageFile.copy(savedImagePath);
-
-    // Save path to shared preferences
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('profile_image_path', savedImagePath);
-
     return savedImage;
   }
 
   Future<void> _loadProfileImage() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? savedImagePath = prefs.getString('profile_image_path');
-
-    if (savedImagePath != null && File(savedImagePath).existsSync()) {
+    if (savedImagePath != null && await File(savedImagePath).exists()) {
       setState(() {
         _profileImage = File(savedImagePath);
         _profileImagePath = savedImagePath;
       });
+    } else {
+      print("Image file not found or path is null!");
     }
   }
 
 
-
   Future<void> _loadUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-
     String? name = prefs.getString(AuthService.userNameKey) ?? "User";
     String? email = prefs.getString(AuthService.userEmailKey) ?? "No email available";
-    String? phoneNumber = prefs.getString(AuthService.userPhoneNumberKey) ?? "No phone number available";
-
+    String? phoneNumber = prefs.getString(AuthService.userPhoneNumberKey) ?? "";
     setState(() {
       _userName = name;
       _userEmail = email;
@@ -101,141 +105,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _userEmailController.text = _userEmail;
       _phoneNumberController.text = _phoneNumber;
     });
-
-    print("Loaded Data -> Name: $_userName, Email: $_userEmail, Phone: $_phoneNumber");
-  }
-
-
-
-
-
-  File? _profileImage;
-  final ImagePicker _picker = ImagePicker();
-
-  late TextEditingController _userNameController;
-  late TextEditingController _userEmailController;
-  late TextEditingController _phoneNumberController;
-
-
-  @override
-  void dispose() {
-    _userNameController.dispose();
-    _userEmailController.dispose();
-    _phoneNumberController.dispose();
-    super.dispose();
-  }
-
-  // Future<void> _pickImage() async {
-  //   var status = await Permission.storage.request();
-  //
-  //   if (status.isGranted) {
-  //     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-  //
-  //     if (image != null) {
-  //       setState(() {
-  //         _profileImage = File(image.path);
-  //       });
-  //     }
-  //   } else if (status.isDenied) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text("Permission denied. Please allow access from settings.")),
-  //     );
-  //   } else if (status.isPermanentlyDenied) {
-  //     openAppSettings();
-  //   }
-  // }
-
-
-  void _toggleEditinguserName() async {
-    if (_isEditinguserName) {
-      String updatedName = _userNameController.text;
-      await AuthService.saveUserDetails(updatedName, _userEmail, _phoneNumber);
-
-      setState(() {
-        _userName = updatedName;
-      });
-    }
-
-    setState(() {
-      _isEditinguserName = !_isEditinguserName;
-    });
-  }
-
-
-
-
-
-  void _toggleEditingEmail() async {
-    if (_isEditinguserEmail) {
-      String updatedEmail = _userEmailController.text;
-      await AuthService.saveUserDetails(_userName, updatedEmail, _phoneNumber);
-
-      setState(() {
-        _userEmail = updatedEmail;
-      });
-    }
-
-    setState(() {
-      _isEditinguserEmail = !_isEditinguserEmail;
-    });
-  }
-
-
-  void _toggleEditingPhoneNumber() async {
-    if (_isEditingPhoneNumber) {
-      String updatedPhone = _phoneNumberController.text;
-      await AuthService.saveUserDetails(_userName, _userEmail, updatedPhone);
-
-      setState(() {
-        _phoneNumber = updatedPhone;
-      });
-    }
-
-    setState(() {
-      _isEditingPhoneNumber = !_isEditingPhoneNumber;
-    });
-  }
-
-
-
-  void _changePassword() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChangePasswordPage(),
-      ),
-    );
-  }
-
-
-  void _deleteAccount() {
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Delete Account"),
-          content: const Text("Are you sure you want to delete your account? This action cannot be undone."),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
-            ),
-            TextButton(
-              onPressed: () {
-                // Perform delete account logic
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Account deleted successfully.")),
-                );
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text("Delete"),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -246,46 +115,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.green.shade700,
         elevation: 0,
         centerTitle: true,
-        leading: Container(
-          margin: EdgeInsets.all(8.0),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.green[400],
-          ),
-          child: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-        ),
-        title: Text(
+        title: const Text(
           'Profile',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black),
         ),
         actions: [
-          Container(
-            margin: EdgeInsets.only(right: 8.0),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.green[700],
-
-            ),
-            child:          IconButton(
-              icon: Icon(Icons.shopping_cart, color: Colors.white),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const Cart(),
-                  ),
-                );
-              },
-            ),
+          IconButton(
+            icon: const Icon(Icons.shopping_cart, color: Colors.white),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const Cart()));
+            },
           ),
         ],
       ),
@@ -296,18 +135,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Center(
               child: Stack(
-                alignment: Alignment.center,
                 children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.grey[300],
-                    backgroundImage: _profileImage != null
-                        ? FileImage(_profileImage!)
-                        : const NetworkImage("https://via.placeholder.com/150") as ImageProvider,
-                    child: _profileImage == null
-                        ? const Icon(Icons.camera_alt, size: 30, color: Colors.white)
-                        : null,
-                  ),
+          CircleAvatar(
+          radius: 50,
+          backgroundColor: Colors.grey[300],
+          backgroundImage: _profileImage != null
+              ? FileImage(_profileImage!)
+              : const AssetImage("assets/images/default_avatar.png") as ImageProvider,
+        ),
                   Positioned(
                     bottom: 0,
                     right: 0,
@@ -316,74 +151,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: CircleAvatar(
                         radius: 20,
                         backgroundColor: Colors.green.shade100,
-                        backgroundImage: _profileImagePath != null
-                            ? FileImage(File(_profileImagePath!))
-                            : null,
-                        child: _profileImagePath == null
-                            ? const Icon(Icons.camera_alt, size: 20, color: Colors.green)
-                            : null,
+                        child: const Icon(Icons.camera_alt, size: 20, color: Colors.green),
                       ),
                     ),
                   ),
-
                 ],
               ),
             ),
             const SizedBox(height: 40),
-            _buildEditableField("Full Name", _userName, _userNameController, _isEditinguserName, _toggleEditinguserName),
+            _buildEditableField("Full Name", _userNameController, _isEditinguserName),
             const SizedBox(height: 20),
-            _buildEditableField("Email", _userEmail, _userEmailController, _isEditinguserEmail, _toggleEditingEmail),
+            _buildEditableField("Email", _userEmailController, _isEditinguserEmail),
             const SizedBox(height: 20),
-            _buildEditableField("Phone Number", _phoneNumber, _phoneNumberController, _isEditingPhoneNumber, _toggleEditingPhoneNumber),
-            const SizedBox(height: 40),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _changePassword,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                child: const Text("Change Password", style: TextStyle(color: Colors.white)),
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            // Delete Account Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _deleteAccount,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: const Text("Delete Account", style: TextStyle(color: Colors.white)),
-              ),
-            ),
+            _buildEditableField("Phone Number", _phoneNumberController, _isEditingPhoneNumber),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildEditableField(
-      String label, String value, TextEditingController controller, bool isEditing, VoidCallback onEditPressed) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: isEditing
-                ? TextField(
-              controller: controller,
-              autofocus: true,
-              decoration: const InputDecoration(border: InputBorder.none),
-              onSubmitted: (_) => onEditPressed(),
-            )
-                : Text(value, style: const TextStyle(color: Colors.black)),
+  Widget _buildEditableField(String label, TextEditingController controller, bool isEditing) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+        ),
+        const SizedBox(height: 5),
+        TextField(
+          controller: controller,
+          readOnly: !isEditing,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.grey[200],
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide.none,
+            ),
+            suffixIcon: IconButton(
+              icon: Icon(isEditing ? Icons.check : Icons.edit, color: Colors.green),
+                onPressed: () async {
+                  if (isEditing) {
+                    SharedPreferences prefs = await SharedPreferences.getInstance();
+                    if (label == "Full Name") {
+                      _userName = controller.text;
+                      await prefs.setString(AuthService.userNameKey, _userName);
+                    } else if (label == "Email") {
+                      _userEmail = controller.text;
+                      await prefs.setString(AuthService.userEmailKey, _userEmail);
+                    } else if (label == "Phone Number") {
+                      _phoneNumber = controller.text;
+                      await prefs.setString(AuthService.userPhoneNumberKey, _phoneNumber);
+                    }
+                  }
+                  setState(() {
+                    if (label == "Full Name") {
+                      _isEditinguserName = !_isEditinguserName;
+                    } else if (label == "Email") {
+                      _isEditinguserEmail = !_isEditinguserEmail;
+                    } else if (label == "Phone Number") {
+                      _isEditingPhoneNumber = !_isEditingPhoneNumber;
+                    }
+                  });
+                }
+            ),
           ),
-          IconButton(icon: const Icon(Icons.edit, color: Colors.black), onPressed: onEditPressed),
-        ],
-      ),
+          style: const TextStyle(fontSize: 16),
+        ),
+      ],
     );
   }
 }

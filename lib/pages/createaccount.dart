@@ -1,9 +1,6 @@
-import 'dart:convert';
-import 'package:eclapp/pages/completeregistration.dart';
 import 'package:eclapp/pages/signinpage.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'Cart.dart';
 import 'auth_service.dart';
 import 'otp.dart';
 
@@ -24,58 +21,62 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController confirmPasswordController = TextEditingController();
   final TextEditingController phoneNumberController = TextEditingController();
 
-  late Future<Image> _logoImage;
-
   @override
   void initState() {
     super.initState();
   }
 
   void _signUp(String name, String email, String password, String confirmPassword, String phoneNumber) async {
+    // Trim inputs
+    email = email.trim();
+    password = password.trim();
+    confirmPassword = confirmPassword.trim();
+    phoneNumber = phoneNumber.trim();
+
+    // Validate inputs
+    if (name.isEmpty || email.isEmpty || password.isEmpty || phoneNumber.isEmpty) {
+      _showError("All fields are required");
+      return;
+    }
+
+    if (!email.contains('@') || !email.contains('.')) {
+      _showError("Please enter a valid email address");
+      return;
+    }
+
     if (password != confirmPassword) {
       _showError("Passwords do not match");
       return;
     }
 
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    // Use AuthService to sign up
+    bool signUpSuccess = await AuthService.signUp(name, email, password, phoneNumber);
 
-    String? storedUsersJson = prefs.getString('users');
-    Map<String, dynamic> users = storedUsersJson != null ? jsonDecode(storedUsersJson) : {};
+    if (signUpSuccess) {
+      // Generate OTP
+      String otp = (100000 + (DateTime.now().millisecondsSinceEpoch % 900000)).toString();
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('otp_$email', otp);
 
-    if (users.containsKey(email)) {
+      // Simulating OTP sending
+      print("OTP sent to $email: $otp");
+
+      // Clear input fields
+      nameController.clear();
+      emailController.clear();
+      passwordController.clear();
+      confirmPasswordController.clear();
+      phoneNumberController.clear();
+
+      // Navigate to OTP verification screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => OtpVerificationScreen(email: email, otp: otp)),
+      );
+    } else {
       _showError("User already exists");
-      return;
     }
-    print("Phone Number: $phoneNumber");
-    users[email] = {
-      "name": name,
-      "password": password,
-      "phoneNumber": phoneNumber
-    };
-
-    await prefs.setString('users', jsonEncode(users));
-
-    // Generate OTP
-    String otp = (100000 + (DateTime.now().millisecondsSinceEpoch % 900000)).toString();
-    await prefs.setString('otp_$email', otp);
-
-    // Simulating OTP sending
-    print("OTP sent to $email: $otp");
-
-    // Clear input fields
-    nameController.clear();
-    emailController.clear();
-    passwordController.clear();
-    confirmPasswordController.clear();
-    phoneNumberController.clear();
-
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => OtpVerificationScreen(email: email, otp: otp)),
-    );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -208,9 +209,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
     );
   }
-
-
-
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));

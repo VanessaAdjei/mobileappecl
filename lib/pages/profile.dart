@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:eclapp/pages/purchases.dart';
 import 'package:eclapp/pages/settings.dart';
 import 'package:eclapp/pages/signinpage.dart';
-import 'package:eclapp/pages/storelocation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -11,9 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'Cart.dart';
 import 'auth_service.dart';
 import 'bottomnav.dart';
-import 'categories.dart';
-import 'categorylist.dart';
-import 'homepage.dart';
 import 'notifications.dart';
 
 class Profile extends StatefulWidget {
@@ -30,62 +26,38 @@ class _ProfileState extends State<Profile> {
       MaterialPageRoute(builder: (context) => screen),
     );
   }
-  int _selectedIndex = 3;
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    switch (index) {
-      case 0:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
-        break;
-      case 1:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const Cart()));
-        break;
-      case 2:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => CategoryPage()));
-        break;
-      case 3:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => Profile()));
-        break;
-      case 4:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => StoreSelectionPage()));
-        break;
-    }
-  }
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
 
   String _userName = "User";
   String _userEmail = "No email available";
   String? _profileImagePath;
 
-
   @override
   void initState() {
     super.initState();
     _loadUserData();
-
   }
-
 
   Future<void> _loadUserData() async {
     String? name = await AuthService.getUserName();
     String? email = await AuthService.getUserEmail();
-    String? imagePath = await AuthService.getProfileImage();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? imagePath = prefs.getString('profile_image_path');
 
     setState(() {
       _userName = name ?? "User";
       _userEmail = email ?? "No email available";
       _profileImagePath = imagePath;
+      if (_profileImagePath != null) {
+        _profileImage = File(_profileImagePath!);
+      }
     });
   }
 
-
-
   Future<void> _pickImage() async {
     var status = await Permission.storage.request();
-
     if (status.isGranted) {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
@@ -114,9 +86,6 @@ class _ProfileState extends State<Profile> {
     return savedImage;
   }
 
-
-  File? _profileImage;
-  final ImagePicker _picker = ImagePicker();
 
 
   @override
@@ -213,46 +182,62 @@ class _ProfileState extends State<Profile> {
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.green.shade100,
-                    image: _profileImage != null
-                        ? DecorationImage(
-                      image: FileImage(_profileImage!),
-                      fit: BoxFit.cover,
-                    )
-                        : const DecorationImage(
-                      image: NetworkImage("https://via.placeholder.com/150"),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  child: _profileImage == null
-                      ? const Icon(Icons.camera_alt, size: 30, color: Colors.white)
-                      : null,
+            GestureDetector(
+            onTap: _pickImage,
+            child: Container(
+              width: 90,
+              height: 90,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.green.shade100,
+                image: _profileImage != null
+                    ? DecorationImage(
+                  image: FileImage(_profileImage!),
+                  fit: BoxFit.cover,
+                )
+                    : (_profileImagePath != null && File(_profileImagePath!).existsSync())
+                    ? DecorationImage(
+                  image: FileImage(File(_profileImagePath!)),
+                  fit: BoxFit.cover,
+                )
+                    : const DecorationImage(
+                  image: NetworkImage("https://via.placeholder.com/150"),
+                  fit: BoxFit.cover,
                 ),
+              ),
 
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(_userName, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.green[800])),
-                    const SizedBox(height: 6),
-                    Text(_userEmail, style: TextStyle(fontSize: 16, color: Colors.grey.shade700)),
-                  ],
-                ),
-              ),
-            ],
+              child: _profileImage == null && _profileImagePath == null
+                  ? const Icon(Icons.camera_alt, size: 30, color: Colors.white)
+                  : null,
+            ),
           ),
-        ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _userName,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.green[800],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _userEmail,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ]),
       ),
-    );
+    ));
   }
 
 
@@ -280,7 +265,7 @@ class _ProfileState extends State<Profile> {
                   ),
                 ),
               ),
-              Icon(Icons.arrow_forward_ios, size: 20, color: Colors.grey[600]), // Slightly larger arrow
+              Icon(Icons.arrow_forward_ios, size: 20, color: Colors.grey[600]),
             ],
           ),
         ),
