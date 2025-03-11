@@ -92,8 +92,6 @@ final Map<String, List<Map<String, dynamic>>> products = {
   ],
 };
 
-
-
 class CategoryPage extends StatefulWidget {
   @override
   _CategoryPageState createState() => _CategoryPageState();
@@ -110,6 +108,37 @@ class _CategoryPageState extends State<CategoryPage> {
     StoreSelectionPage(),
   ];
 
+
+  TextEditingController _searchController = TextEditingController();
+  List<String> _filteredCategories = categories.keys.toList(); // Show all categories initially
+
+  void _searchProduct(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        _filteredCategories = categories.keys.toList(); // Reset to all categories
+      });
+      return;
+    }
+
+    Set<String> matchedCategories = {}; // Store unique categories that contain the product
+
+    products.forEach((subcategory, productList) {
+      for (var product in productList) {
+        if (product['name'].toLowerCase().contains(query.toLowerCase())) {
+          // Find which category the subcategory belongs to
+          categories.forEach((category, subcategories) {
+            if (subcategories.contains(subcategory)) {
+              matchedCategories.add(category);
+            }
+          });
+        }
+      }
+    });
+
+    setState(() {
+      _filteredCategories = matchedCategories.toList(); // Update UI with only matched categories
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -169,22 +198,39 @@ class _CategoryPageState extends State<CategoryPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Search Bar
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: TextField(
+                controller: _searchController,
+                onChanged: _searchProduct,
+                decoration: InputDecoration(
+                  hintText: "Search Categories...",
+                  prefixIcon: Icon(Icons.search, color: Colors.green.shade700),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                ),
+              ),
             ),
+
+            // Category Grid
             Expanded(
               child: GridView.builder(
                 padding: const EdgeInsets.all(16.0),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,  // Display two cards per row
+                  crossAxisCount: 2,
                   crossAxisSpacing: 20,
                   mainAxisSpacing: 20,
-                  childAspectRatio: 1, // Adjust card height if needed
+                  childAspectRatio: 1,
                 ),
-                itemCount: categories.length,
+                itemCount: _filteredCategories.length,
                 itemBuilder: (context, index) {
-                  String categoryName = categories.keys.elementAt(index);
+                  String categoryName = _filteredCategories[index];
                   List<String> subcategories = categories[categoryName]!;
 
                   return CategoryGridItem(
@@ -214,6 +260,7 @@ class _CategoryPageState extends State<CategoryPage> {
   }
 }
 
+
 class CategoryGridItem extends StatelessWidget {
   final String categoryName;
   final List<String> subcategories;
@@ -225,7 +272,6 @@ class CategoryGridItem extends StatelessWidget {
     required this.subcategories,
     required this.onTap,
     required this.imagePath,
-
   });
 
   @override
@@ -233,29 +279,48 @@ class CategoryGridItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        margin: EdgeInsets.zero,
-        clipBehavior: Clip.antiAlias,
+        elevation: 4,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(5),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: Image.asset(
-                imagePath,
-                fit: BoxFit.cover,
+              child: ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                categoryName,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+              padding: const EdgeInsets.all(5.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    categoryName,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green.shade900,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 1),
+                  Text(
+                    subcategories.join(', '),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
           ],

@@ -37,7 +37,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     });
 
     // Navigate to the homepage after a delay
-    Future.delayed(const Duration(seconds: 4), () {
+    Future.delayed(const Duration(seconds: 6), () {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => HomePage()),
@@ -101,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  "Welcome to the ECL App",
+                  "Welcome to ECL App",
                   style: GoogleFonts.poppins(
                     textStyle: const TextStyle(
                       fontSize: 18,

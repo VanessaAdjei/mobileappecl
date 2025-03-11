@@ -178,14 +178,18 @@ class AuthService {
 
   static Future<String?> getUserPhoneNumber() async {
     final prefs = await SharedPreferences.getInstance();
-
     String? email = prefs.getString(loggedInUserKey);
+    print("Logged-in User Email: $email"); // Debug log
+
     if (email != null) {
       String? usersData = prefs.getString(usersKey);
+      print("Users Data: $usersData"); // Debug log
+
       if (usersData != null) {
         Map<String, Map<String, String>> users =
         Map<String, Map<String, String>>.from(json.decode(usersData));
         String? phoneNumber = users[email]?['phoneNumber'];
+        print("Retrieved Phone Number: $phoneNumber"); // Debug log
         if (phoneNumber != null) {
           return phoneNumber;
         }

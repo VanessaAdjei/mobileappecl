@@ -1,8 +1,7 @@
-import 'package:eclapp/pages/auth_service.dart';
+
+import 'package:eclapp/pages/categories.dart';
 import 'package:eclapp/pages/signinpage.dart';
 import 'package:flutter/material.dart';
-import 'package:eclapp/pages/CartItems.dart';
-import 'package:eclapp/pages/categorylist.dart';
 import 'package:eclapp/pages/splashscreen.dart';
 import 'package:eclapp/pages/homepage.dart';
 import 'package:eclapp/pages/cart.dart';
@@ -76,7 +75,7 @@ class _MyAppState extends State<MyApp> {
         '/splashscreen': (context) => SplashScreen(),
         '/': (context) => HomePage(),
         '/cart': (context) => const Cart(),
-        '/categories': (context) => CategoriesPage(),
+        '/categories': (context) => CategoryPage(),
         '/profile': (context) => const Profile(),
         '/aboutus': (context) => AboutUsScreen(),
         '/signin': (context) => SignInScreen(),

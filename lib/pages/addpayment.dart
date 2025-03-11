@@ -1,11 +1,9 @@
-import 'package:eclapp/pages/storelocation.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'Cart.dart';
-import 'CartItems.dart';
-import 'categories.dart';
-import 'categorylist.dart';
-import 'homepage.dart';
-import 'profile.dart';
+import 'auth_service.dart';
+import 'bottomnav.dart';
 
 class AddPaymentPage extends StatefulWidget {
   @override
@@ -22,32 +20,43 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
   final TextEditingController _expiryDateController = TextEditingController();
   final TextEditingController _cvvController = TextEditingController();
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _loadUserPhoneNumber();
+    _loadPaymentMethods();
+  }
 
-    switch (index) {
-      case 0:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
-        break;
-      case 1:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const Cart()));
-        break;
-      case 2:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => CategoryPage()));
-        break;
-      case 3:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => Profile()));
-        break;
-      case 4:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => StoreSelectionPage()));
-        break;
+  Future<void> _loadUserPhoneNumber() async {
+    final phoneNumber = await AuthService.getUserPhoneNumber();
+    if (phoneNumber != null) {
+      _momoNumberController.text = phoneNumber;
     }
   }
 
+  Future<void> _loadPaymentMethods() async {
+    final prefs = await SharedPreferences.getInstance();
+    final paymentMethodsJson = prefs.getStringList('paymentMethods') ?? [];
+    print('Loaded payment methods: $paymentMethodsJson');
+    setState(() {
+      _paymentMethods = paymentMethodsJson
+          .map((method) => Map<String, String>.from(json.decode(method)))
+          .toList();
+    });
+  }
+
+
+  Future<void> _savePaymentMethods() async {
+    final prefs = await SharedPreferences.getInstance();
+    final paymentMethodsJson =
+    _paymentMethods.map((method) => json.encode(method)).toList();
+    await prefs.setStringList('paymentMethods', paymentMethodsJson);
+  }
+
   void _savePaymentMethod() {
-    if (_selectedPaymentMethod == 'MoMo' && _selectedMoMoProvider != null && _momoNumberController.text.isNotEmpty) {
+    if (_selectedPaymentMethod == 'MoMo' &&
+        _selectedMoMoProvider != null &&
+        _momoNumberController.text.isNotEmpty) {
       _paymentMethods.add({
         'type': 'MoMo',
         'provider': _selectedMoMoProvider!,
@@ -64,6 +73,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
         'cvv': _cvvController.text,
       });
     }
+    _savePaymentMethods();
     setState(() => _clearForm());
   }
 
@@ -76,7 +86,12 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
     _cvvController.clear();
   }
 
-  void _deletePaymentMethod(int index) => setState(() => _paymentMethods.removeAt(index));
+  void _deletePaymentMethod(int index) {
+    setState(() {
+      _paymentMethods.removeAt(index);
+    });
+    _savePaymentMethods();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,58 +100,35 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
         backgroundColor: Colors.green.shade700,
         elevation: 0,
         centerTitle: true,
-        leading: Container(
-          margin: EdgeInsets.all(8.0),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.green[400],
-          ),
-          child: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-         'Add Payment',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
+          'Add Payment',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
         ),
         actions: [
-          Container(
-            margin: EdgeInsets.only(right: 8.0),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.green[700],
-
-            ),
-            child:          IconButton(
-              icon: Icon(Icons.shopping_cart, color: Colors.white),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const Cart(),
-                  ),
-                );
-              },
-            ),
+          IconButton(
+            icon: Icon(Icons.shopping_cart, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const Cart()),
+              );
+            },
           ),
         ],
       ),
       body: SingleChildScrollView(
-        physics: BouncingScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Center(child: Image.asset('assets/images/payment.png', height: 200)),
+            children: [
+              Center(
+                child: Image.asset('assets/images/payment.png', height: 200),
+              ),
               SizedBox(height: 10),
               if (_paymentMethods.isNotEmpty) _buildSavedPaymentMethods(),
               _buildPaymentForm(),
@@ -146,10 +138,9 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
                   onPressed: _savePaymentMethod,
                   child: Text('Save Payment Method'),
                   style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
                     backgroundColor: Colors.green,
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    textStyle: TextStyle(fontSize: 16),
+                    padding:
+                    EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   ),
                 ),
               ),
@@ -157,109 +148,104 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
           ),
         ),
       ),
-
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      bottomNavigationBar: const CustomBottomNav(currentIndex: 0),
     );
   }
 
   Widget _buildSavedPaymentMethods() {
-    return SizedBox(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Your Payment Methods:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          SizedBox(height: 5),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(), // Prevent conflict with parent scroll
-            itemCount: _paymentMethods.length,
-            itemBuilder: (context, index) {
-              final method = _paymentMethods[index];
-              return Card(
-                margin: EdgeInsets.symmetric(vertical: 8),
-                child: ListTile(
-                  title: Text(method['type'] == 'MoMo' ? 'MoMo - ${method['provider']}' : 'Card - **** ${method['number']!.substring(method['number']!.length - 4)}'),
-                  subtitle: Text(method['number']!),
-                  trailing: IconButton(icon: Icon(Icons.delete, color: Colors.red), onPressed: () => _deletePaymentMethod(index)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Your Payment Methods:',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          itemCount: _paymentMethods.length,
+          itemBuilder: (context, index) {
+            final method = _paymentMethods[index];
+            return Card(
+              margin: EdgeInsets.symmetric(vertical: 8),
+              child: ListTile(
+                title: Text(
+                  method['type'] == 'MoMo'
+                      ? 'MoMo - ${method['provider']}'
+                      : 'Card - **** ${method['number']!.substring(method['number']!.length - 4)}',
                 ),
-              );
-            },
-          ),
-        ],
-      ),
+                subtitle: Text(method['number']!),
+                trailing: IconButton(
+                  icon: Icon(Icons.delete, color: Colors.red),
+                  onPressed: () => _deletePaymentMethod(index),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
-
 
   Widget _buildPaymentForm() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Add a Payment Method:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(
+          'Add a Payment Method:',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
         SizedBox(height: 5),
-        _buildDropdown('Payment Method', _selectedPaymentMethod, ['MoMo', 'Card'],
-                (value) => setState(() => _selectedPaymentMethod = value)),
-        SizedBox(height: 10), // Space between dropdowns
+        _buildDropdown(
+          'Payment Method',
+          _selectedPaymentMethod,
+          ['MoMo', 'Card'],
+              (value) => setState(() => _selectedPaymentMethod = value),
+        ),
+        SizedBox(height: 10),
         if (_selectedPaymentMethod == 'MoMo') ...[
-          _buildDropdown('MoMo Provider', _selectedMoMoProvider, ['Telecel', 'MTN', 'AirtelTigo'],
-                  (value) => setState(() => _selectedMoMoProvider = value)),
-          SizedBox(height: 10),
-          _buildTextField('MoMo Number', _momoNumberController, TextInputType.phone),
+          _buildDropdown(
+            'MoMo Provider',
+            _selectedMoMoProvider,
+            ['Telecel', 'MTN', 'AirtelTigo'],
+                (value) => setState(() => _selectedMoMoProvider = value),
+          ),
+          _buildTextField('MoMo Number', _momoNumberController),
         ],
         if (_selectedPaymentMethod == 'Card') ...[
-          _buildTextField('Card Number', _cardNumberController, TextInputType.number),
-          SizedBox(height: 10),
-          _buildTextField('Expiry Date (MM/YY)', _expiryDateController, TextInputType.datetime),
-          SizedBox(height: 10),
-          _buildTextField('CVV', _cvvController, TextInputType.number, obscureText: true),
+          _buildTextField('Card Number', _cardNumberController),
+          _buildTextField('Expiry Date (MM/YY)', _expiryDateController),
+          _buildTextField('CVV', _cvvController, obscureText: true),
         ],
       ],
     );
   }
 
-
-  Widget _buildDropdown(String label, String? value, List<String> items, ValueChanged<String?> onChanged) {
+  Widget _buildDropdown(
+      String label,
+      String? value,
+      List<String> items,
+      ValueChanged<String?> onChanged,
+      ) {
     return DropdownButtonFormField<String>(
-      decoration: InputDecoration(labelText: label, border: OutlineInputBorder()),
+      decoration: InputDecoration(border: OutlineInputBorder(), labelText: label),
       value: value,
-      items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
+      items: items
+          .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+          .toList(),
       onChanged: onChanged,
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, TextInputType type, {bool obscureText = false}) {
+  Widget _buildTextField(String label, TextEditingController controller,
+      {bool obscureText = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextField(controller: controller, decoration: InputDecoration(labelText: label, border: OutlineInputBorder()), keyboardType: type, obscureText: obscureText),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      currentIndex: _selectedIndex,
-      onTap: _onItemTapped,
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: Colors.green.shade700,
-      selectedItemColor: Colors.white,
-      unselectedItemColor: Colors.white70,
-      items: [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.shopping_cart),
-          label: 'Cart',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.category),
-          label: 'Categories',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Profile',
-        ),
-      ],
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(border: OutlineInputBorder(), labelText: label),
+        obscureText: obscureText,
+      ),
     );
   }
 }

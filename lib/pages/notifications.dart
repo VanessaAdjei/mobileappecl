@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'CartItems.dart';
 import 'cart.dart';
-import 'categorylist.dart';
 import 'homepage.dart';
 import 'notificationstate.dart';
 import 'profile.dart';
@@ -35,23 +34,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       _selectedIndex = index;
     });
 
-    switch (index) {
-      case 0:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
-        break;
-      case 1:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const Cart()));
-        break;
-      case 2:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => CategoriesPage()));
-        break;
-      case 3:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => Profile()));
-        break;
-      case 4:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => StoreSelectionPage()));
-        break;
-    }
   }
 
   void _loadNotifications() async {

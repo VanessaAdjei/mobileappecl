@@ -5,7 +5,6 @@ import 'Cart.dart';
 import 'CartItems.dart';
 import 'bottomnav.dart';
 import 'categories.dart';
-import 'categorylist.dart';
 import 'homepage.dart';
 
 class StoreSelectionPage extends StatefulWidget {
@@ -68,10 +67,7 @@ class _StoreSelectionPageState extends State<StoreSelectionPage> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomePage()),
-        );
+        Navigator.pop(HomePage() as BuildContext);
         return false;
       },
       child:  Scaffold(

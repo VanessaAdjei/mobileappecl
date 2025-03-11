@@ -3,10 +3,10 @@ import 'package:eclapp/pages/storelocation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'CartItem.dart';
+import 'bottomnav.dart';
 import 'cart.dart';
 import 'cartprovider.dart';
 import 'categories.dart';
-import 'categorylist.dart';
 import 'homepage.dart';
 import 'package:uuid/uuid.dart';
 
@@ -331,22 +331,7 @@ class _ItemPageState extends State<ItemPage> {
             ),
           ),
         ),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.green.shade700,
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white70,
-          elevation: 8.0,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Cart'),
-            BottomNavigationBarItem(icon: Icon(Icons.category), label: 'Categories'),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-            BottomNavigationBarItem(icon: Icon(Icons.location_city_sharp), label: 'Stores'),
-          ],
-        ),
+        bottomNavigationBar: const CustomBottomNav(currentIndex: 0),
       ),
     );
   }

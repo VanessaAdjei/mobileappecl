@@ -253,7 +253,7 @@ class _HomePageState extends State<HomePage> {
         ),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.symmetric(horizontal: 8), // Reduce padding here
+          padding: EdgeInsets.symmetric(horizontal: 8),
           child: Row(
             children: popularProducts.map((product) {
               return GestureDetector(
@@ -261,7 +261,7 @@ class _HomePageState extends State<HomePage> {
                   print("Tapped on ${product['name']}");
                 },
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 8), // Reduce spacing here
+                  padding: const EdgeInsets.only(right: 8),
                   child: ClipOval(
                     child: Stack(
                       alignment: Alignment.center,
@@ -296,7 +296,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildOrderMedicineCard() {
     List<String> imageUrls = [
-      'assets/images/slider1.png',
+      'assets/images/banner1.png',
       'assets/images/slider2.png',
       'assets/images/slider3.png',
     ];
@@ -313,7 +313,7 @@ class _HomePageState extends State<HomePage> {
 
     return Container(
       padding: EdgeInsets.all(8),
-      height: 150,
+      height: 200,
       // width: 150,
       child: PageView.builder(
         controller: _pageController,
@@ -323,7 +323,7 @@ class _HomePageState extends State<HomePage> {
             borderRadius: BorderRadius.circular(20),
             child: Image.asset(
               imageUrls[index],
-              fit: BoxFit.cover,
+              fit: BoxFit.fill,
             ),
           );
         },

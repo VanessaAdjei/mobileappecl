@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'Cart.dart';
 import 'cartprovider.dart';
 import 'categories.dart';
-import 'categorylist.dart';
 import 'homepage.dart';
 
 class PurchaseScreen extends StatefulWidget {
