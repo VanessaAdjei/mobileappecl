@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/foundation.dart';
 import 'CartItem.dart';
 import 'dart:convert';
@@ -14,6 +12,7 @@ class CartProvider with ChangeNotifier {
 
   CartProvider() {
     _loadCart();
+    _loadPurchasedItems();
   }
 
   void addToCart(CartItem item) {
@@ -23,14 +22,18 @@ class CartProvider with ChangeNotifier {
     } else {
       _cartItems.add(item);
     }
-    _saveCart(); // Save to SharedPreferences
+    _saveCart();
     notifyListeners();
   }
+
   void purchaseItems() {
     _purchasedItems.addAll(_cartItems);
     _cartItems.clear();
+    _saveCart();
+    _savePurchasedItems();
     notifyListeners();
   }
+
   void removeFromCart(int index) {
     _cartItems.removeAt(index);
     _saveCart();
@@ -38,9 +41,11 @@ class CartProvider with ChangeNotifier {
   }
 
   void updateQuantity(int index, int newQuantity) {
-    _cartItems[index].updateQuantity(newQuantity);
-    _saveCart();
-    notifyListeners();
+    if (newQuantity > 0) {
+      _cartItems[index].updateQuantity(newQuantity);
+      _saveCart();
+      notifyListeners();
+    }
   }
 
   void clearCart() {
@@ -50,37 +55,46 @@ class CartProvider with ChangeNotifier {
   }
 
   double calculateTotal() {
-    double total = 0;
-    for (var item in _cartItems) {
-      total += item.price * item.quantity;
-    }
-    return total;
+    return _cartItems.fold(0, (total, item) => total + (item.price * item.quantity));
   }
 
   double calculateSubtotal() {
-    double subtotal = 0.0;
-    for (var item in _cartItems) {
-      subtotal += item.price* item.quantity;
-    }
-    return subtotal;
+    return _cartItems.fold(0, (subtotal, item) => subtotal + (item.price * item.quantity));
   }
 
-
-  void _saveCart() async {
+  // Save cart to SharedPreferences
+  Future<void> _saveCart() async {
     final prefs = await SharedPreferences.getInstance();
     final cartJson = jsonEncode(_cartItems.map((item) => item.toJson()).toList());
     await prefs.setString('cart', cartJson);
   }
 
-  void _loadCart() async {
+  // Load cart from SharedPreferences
+  Future<void> _loadCart() async {
     final prefs = await SharedPreferences.getInstance();
     final cartJson = prefs.getString('cart');
     if (cartJson != null) {
       final cartList = jsonDecode(cartJson) as List;
       _cartItems = cartList.map((item) => CartItem.fromJson(item)).toList();
-      notifyListeners();
     }
+    notifyListeners();
   }
 
+  // Save purchased items to SharedPreferences
+  Future<void> _savePurchasedItems() async {
+    final prefs = await SharedPreferences.getInstance();
+    final purchasedJson = jsonEncode(_purchasedItems.map((item) => item.toJson()).toList());
+    await prefs.setString('purchasedItems', purchasedJson);
+  }
 
+  // Load purchased items from SharedPreferences
+  Future<void> _loadPurchasedItems() async {
+    final prefs = await SharedPreferences.getInstance();
+    final purchasedJson = prefs.getString('purchasedItems');
+    if (purchasedJson != null) {
+      final purchasedList = jsonDecode(purchasedJson) as List;
+      _purchasedItems = purchasedList.map((item) => CartItem.fromJson(item)).toList();
+    }
+    notifyListeners();
+  }
 }

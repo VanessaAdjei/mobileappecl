@@ -67,8 +67,8 @@ class _StoreSelectionPageState extends State<StoreSelectionPage> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        Navigator.pop(HomePage() as BuildContext);
-        return false;
+        Navigator.pop(context);
+        return Future.value(false);
       },
       child:  Scaffold(
         appBar: AppBar(

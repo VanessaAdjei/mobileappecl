@@ -100,7 +100,11 @@ class _ItemPageState extends State<ItemPage> {
 
     return WillPopScope(
       onWillPop: () async {
-        Navigator.pop(context);
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()),
+              (route) => false,
+        );
         return Future.value(false);
       },
       child: Scaffold(
@@ -117,10 +121,15 @@ class _ItemPageState extends State<ItemPage> {
             child: IconButton(
               icon: Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => HomePage()),
+                      (route) => false,
+                );
               },
             ),
           ),
+
           title: Text(
             widget.name,
             style: TextStyle(

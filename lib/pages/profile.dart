@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'Cart.dart';
 import 'auth_service.dart';
 import 'bottomnav.dart';
+import 'homepage.dart';
 import 'notifications.dart';
 
 class Profile extends StatefulWidget {
@@ -86,13 +87,15 @@ class _ProfileState extends State<Profile> {
     return savedImage;
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        Navigator.pop(context);
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()),
+              (route) => false,
+        );
         return Future.value(false);
       },
       child: Scaffold(
@@ -127,7 +130,6 @@ class _ProfileState extends State<Profile> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.green[700],
-
               ),
               child:          IconButton(
                 icon: Icon(Icons.shopping_cart, color: Colors.white),
@@ -259,7 +261,7 @@ class _ProfileState extends State<Profile> {
                 child: Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 18, // Larger font size
+                    fontSize: 18,
                     fontWeight: FontWeight.w300,
                     color: Colors.black87,
                   ),
@@ -272,8 +274,6 @@ class _ProfileState extends State<Profile> {
       ),
     );
   }
-
-
 }
 
 

@@ -110,7 +110,7 @@ class _CategoryPageState extends State<CategoryPage> {
 
 
   TextEditingController _searchController = TextEditingController();
-  List<String> _filteredCategories = categories.keys.toList(); // Show all categories initially
+  List<String> _filteredCategories = categories.keys.toList();
 
   void _searchProduct(String query) {
     if (query.isEmpty) {
@@ -142,8 +142,12 @@ class _CategoryPageState extends State<CategoryPage> {
 
   @override
   Widget build(BuildContext context) {
-
-    return Scaffold(
+    return WillPopScope(
+        onWillPop: () async {
+          Navigator.pop(context);
+          return Future.value(true);
+        },
+        child:  Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green.shade700,
         elevation: 0,
@@ -256,7 +260,7 @@ class _CategoryPageState extends State<CategoryPage> {
         ),
       ),
       bottomNavigationBar: const CustomBottomNav(currentIndex: 2),
-    );
+    ));
   }
 }
 
