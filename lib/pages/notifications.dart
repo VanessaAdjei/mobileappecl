@@ -1,14 +1,9 @@
 import 'dart:convert';
-
-import 'package:eclapp/pages/storelocation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'CartItems.dart';
+import 'bottomnav.dart';
 import 'cart.dart';
-import 'homepage.dart';
-import 'notificationstate.dart';
-import 'profile.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({Key? key}) : super(key: key);
@@ -19,8 +14,7 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final Map<String, List<Map<String, String>>> groupedNotifications = {};
-  int _selectedIndex = 3;
-  int? _expandedIndex;
+
 
   @override
   void initState() {
@@ -29,12 +23,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     _addSampleNotifications();
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-  }
 
   void _loadNotifications() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -61,7 +49,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     });
   }
 
+
   void _addSampleNotifications() {
+    if (groupedNotifications.isNotEmpty) return;
     DateTime now = DateTime.now();
     String formattedDate = DateFormat("EEEE, MMM d").format(now);
 
@@ -146,30 +136,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   void _toggleExpand(String group, int index) {
     setState(() {
-      if (_expandedIndex == index) {
-        _expandedIndex = null;
-      } else {
-        _expandedIndex = index;
-        if (groupedNotifications[group]?[index]['read'] == 'false') {
-          groupedNotifications[group]?[index]['read'] = 'true';
-        }
-      }
+      bool isCurrentlyExpanded = groupedNotifications[group]?[index]['expanded'] == 'true';
+      groupedNotifications[group]?[index]['expanded'] = isCurrentlyExpanded ? 'false' : 'true';
+      groupedNotifications[group]?[index]['read'] = 'true';
     });
+
     _saveNotifications();
   }
 
-
-  int _countUnreadNotifications() {
-    int count = 0;
-    groupedNotifications.forEach((date, notifications) {
-      notifications.forEach((notification) {
-        if (notification['read'] == 'false') {
-          count++;
-        }
-      });
-    });
-    return count;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -249,43 +223,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           }).toList(),
         )
             : Center(child: Text("No notifications")),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.green.shade700,
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white70,
-          elevation: 8.0,
-          items: [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart),
-              label: 'Cart',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.category),
-              label: 'Categories',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Profile',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.location_city_sharp),
-              label: 'Stores',
-            ),
-          ],
-        ),
+        bottomNavigationBar: const CustomBottomNav(currentIndex: 0),
       ),
     );
   }
 
   Widget _buildNotificationTile(String group, int index, Map<String, String> notification) {
-    bool isExpanded = _expandedIndex == index;
+    bool isExpanded = notification['expanded'] == 'true';
     bool isRead = notification['read'] == 'true';
 
     return Dismissible(
@@ -313,14 +257,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: InkWell(
           onTap: () {
             setState(() {
-              _toggleExpand(group, index);
-              // Mark as read when tapped
               if (notification['read'] == 'false') {
                 notification['read'] = 'true';
               }
+              _toggleExpand(group, index);
             });
             _saveNotifications();
           },
+
 
           child: Padding(
             padding: const EdgeInsets.all(12.0),
@@ -348,7 +292,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  isExpanded ? notification['message']! : "${notification['message']!.substring(0, 30)}...",
+                  notification['message']!,
+                  maxLines: isExpanded ? null : 1,
+                  overflow: isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
                   style: TextStyle(color: Colors.grey[700]),
                 ),
                 const SizedBox(height: 8),

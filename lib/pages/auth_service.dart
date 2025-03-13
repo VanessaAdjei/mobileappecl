@@ -1,8 +1,12 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:http/http.dart' as http;
 
 class AuthService {
+
+  static const String baseUrl = "http://eclcommerce.test/api";
+
   static const String usersKey = "users";
   static const String loggedInUserKey = "loggedInUser";
   static const String isLoggedInKey = "isLoggedIn";
@@ -30,40 +34,31 @@ class AuthService {
 
   // Sign up a new user
   static Future<bool> signUp(String name, String email, String password, String phoneNumber) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? usersJson = prefs.getString(usersKey);
-    Map<String, dynamic> users = usersJson != null ? json.decode(usersJson) : {};
+    final url = Uri.parse('$baseUrl/register');
 
-    // Trim and lowercase the email
-    email = email.trim().toLowerCase();
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "name": name,
+          "email": email,
+          "password": password,
+          "phone_number": phoneNumber,
+        }),
+      );
 
-    // Check if the user already exists
-    if (users.containsKey(email)) {
-      print("User already exists: $email");
+      if (response.statusCode == 201) {
+        return true; // Successfully registered
+      } else {
+        print("Signup failed: ${response.body}");
+        print(response.body);
+        return false; // User already exists or another issue
+      }
+    } catch (error) {
+      print("Error during signup: $error");
       return false;
     }
-
-    // Hash the password
-    String hashedPassword = hashPassword(password);
-    print("Hashed Password: $hashedPassword");
-
-    // Add the new user to the users map
-    users[email] = {
-      "name": name,
-      "email": email,
-      "password": hashedPassword,
-      "phoneNumber": phoneNumber
-    };
-
-    // Save the updated users map to SharedPreferences
-    bool saveStatus = await prefs.setString(usersKey, json.encode(users));
-    print("Sign-Up Save Status: $saveStatus");
-    print("Stored Users after Sign-Up: ${json.encode(users)}");
-
-    return saveStatus;
-
-    print("User signed up successfully: $email");
-    return true;
   }
 
 
@@ -224,27 +219,37 @@ class AuthService {
     return false;
   }
 
-  static Future<bool> updatePassword(String newPassword) async {
+  static Future<bool> updatePassword(String oldPassword, String newPassword) async {
+    if (!(await validateCurrentPassword(oldPassword))) {
+      print("Old password does not match.");
+      return false;
+    }
+
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userEmail = prefs.getString(loggedInUserKey);  // Updated key
+    String? userEmail = prefs.getString(loggedInUserKey);
+
     if (userEmail != null) {
       String? storedUserJson = prefs.getString(usersKey);
       if (storedUserJson != null) {
-        Map<String, dynamic> users = Map<String, dynamic>.from(jsonDecode(storedUserJson));
-        if (users.containsKey(userEmail)) {
-          String newHashedPassword = hashPassword(newPassword);
-          users[userEmail]['password'] = newHashedPassword;
-          await prefs.setString(usersKey, jsonEncode(users));
-          print("Password updated for $userEmail");
-          return true;
-        }
+        Map<String, dynamic> users = jsonDecode(storedUserJson);
+        users[userEmail]['password'] = hashPassword(newPassword);
+        await prefs.setString(usersKey, jsonEncode(users));
+        print("Password updated for $userEmail");
+        return true;
       }
     }
-    print("Password update failed for $userEmail");
+
+    print("Password update failed.");
     return false;
   }
 
 
 
 
+
+
+
+
 }
+
+

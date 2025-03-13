@@ -171,6 +171,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildEditableField(String label, TextEditingController controller, bool isEditing) {
+    bool isEditable = label == "Full Name"; // Only Full Name should be editable
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -181,7 +183,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 5),
         TextField(
           controller: controller,
-          readOnly: !isEditing,
+          readOnly: !isEditable, // Non-editable for Email & Phone Number
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.grey[200],
@@ -189,37 +191,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
             ),
-            suffixIcon: IconButton(
+            suffixIcon: isEditable
+                ? IconButton(
               icon: Icon(isEditing ? Icons.check : Icons.edit, color: Colors.green),
-                onPressed: () async {
-                  if (isEditing) {
-                    SharedPreferences prefs = await SharedPreferences.getInstance();
-                    if (label == "Full Name") {
-                      _userName = controller.text;
-                      await prefs.setString(AuthService.userNameKey, _userName);
-                    } else if (label == "Email") {
-                      _userEmail = controller.text;
-                      await prefs.setString(AuthService.userEmailKey, _userEmail);
-                    } else if (label == "Phone Number") {
-                      _phoneNumber = controller.text;
-                      await prefs.setString(AuthService.userPhoneNumberKey, _phoneNumber);
-                    }
-                  }
-                  setState(() {
-                    if (label == "Full Name") {
-                      _isEditinguserName = !_isEditinguserName;
-                    } else if (label == "Email") {
-                      _isEditinguserEmail = !_isEditinguserEmail;
-                    } else if (label == "Phone Number") {
-                      _isEditingPhoneNumber = !_isEditingPhoneNumber;
-                    }
-                  });
+              onPressed: () async {
+                if (isEditing) {
+                  SharedPreferences prefs = await SharedPreferences.getInstance();
+                  _userName = controller.text;
+                  await prefs.setString(AuthService.userNameKey, _userName);
                 }
-            ),
+                setState(() {
+                  _isEditinguserName = !_isEditinguserName;
+                });
+              },
+            )
+                : null, // Remove edit button for non-editable fields
           ),
           style: const TextStyle(fontSize: 16),
         ),
       ],
     );
   }
+
 }

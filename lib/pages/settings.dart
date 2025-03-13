@@ -4,11 +4,13 @@ import 'package:eclapp/pages/changepassword.dart';
 import 'package:eclapp/pages/privacypolicy.dart';
 import 'package:eclapp/pages/profilescreen.dart';
 import 'package:eclapp/pages/tandc.dart';
+import 'package:eclapp/pages/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_service.dart';
 import 'aboutus.dart';
@@ -18,12 +20,14 @@ import 'loggedout.dart';
 import 'notifications.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({Key? key, required this.toggleDarkMode}) : super(key: key);
-  final void Function(bool value) toggleDarkMode;
+  final Function(bool)? toggleDarkMode;
+
+  const SettingsScreen({Key? key, this.toggleDarkMode}) : super(key: key);
 
   @override
   _SettingsScreenState createState() => _SettingsScreenState();
 }
+
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isDarkMode = false;
@@ -37,10 +41,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _loadUserData();
-    // WidgetsBinding.instance.addPostFrameCallback((_) async {
-    //   await _loadProfileImage();
-    // });
+    _loadDarkModePreference();
   }
+
+
+
+
+  Future<void> _loadDarkModePreference() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool isDarkMode = prefs.getBool('dark_mode') ?? false;
+
+    setState(() {
+      _isDarkMode = isDarkMode;
+    });
+
+    // Sync with ThemeProvider
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    if (isDarkMode != themeProvider.isDarkMode) {
+      themeProvider.toggleTheme();
+    }
+  }
+
+
+  Future<void> _saveDarkModePreference(bool value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('dark_mode', value);
+  }
+
+  void _toggleDarkMode(bool value) {
+    setState(() {
+      _isDarkMode = value;
+    });
+
+    widget.toggleDarkMode?.call(value); // Only call if it's not null
+
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    themeProvider.toggleTheme();
+
+    _saveDarkModePreference(value);
+  }
+
+
+
+
+
 
 
   Future<void> _loadUserData() async {
@@ -87,35 +131,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return savedImage;
   }
 
-  void _toggleDarkMode(bool value) {
-    setState(() {
-      _isDarkMode = value;
-    });
-    widget.toggleDarkMode(value);
-  }
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green.shade700,
+        backgroundColor: _isDarkMode ? Colors.black : Colors.green.shade700,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: _isDarkMode ? Colors.white : Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Settings',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black),
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: _isDarkMode ? Colors.white : Colors.black,
+          ),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.shopping_cart, color: Colors.white),
+            icon: Icon(Icons.shopping_cart, color: _isDarkMode ? Colors.white : Colors.black),
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const Cart())),
           ),
         ],
       ),
+
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(10.0),
@@ -199,17 +243,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
-
   Widget _buildDarkModeToggle() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return ListTile(
-      leading: Icon(Icons.brightness_4),
-      title: Text("Dark Mode"),
+      leading: Icon(Icons.brightness_4, color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+      title: Text(
+        "Dark Mode",
+        style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+      ),
       trailing: Switch(
-        value: _isDarkMode,
+        value: themeProvider.isDarkMode,
         onChanged: _toggleDarkMode,
       ),
     );
   }
+
 
   Widget _buildSettingOption(String text, IconData icon, Widget destination) {
     return InkWell(

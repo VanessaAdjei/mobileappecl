@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import 'Cart.dart';
 
@@ -56,7 +57,24 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
     );
   }
 
-  @override
+  void _submitPrescription() async {
+    if (_selectedImage != null) {
+      _showConfirmationSnackbar("Prescription submitted successfully!");
+      final String phoneNumber = "+233504518047";
+      final String message = "Hello, I am submitting my prescription.";
+      final Uri whatsappUrl = Uri.parse("https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}");
+
+      try {
+        await launchUrl(whatsappUrl);
+        _showConfirmationSnackbar("Opening WhatsApp...");
+      } catch (e) {
+        _showConfirmationSnackbar("Could not open WhatsApp.");
+      }
+    } else {
+      _showConfirmationSnackbar("Please upload a prescription first.");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -145,14 +163,14 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
       backgroundColor: Colors.green.shade50,
     );
   }
-
-  void _submitPrescription() {
-    if (_selectedImage != null) {
-      _showConfirmationSnackbar("Prescription submitted successfully!");
-    } else {
-      _showConfirmationSnackbar("Please upload a prescription first.");
-    }
-  }
+  //
+  // void _submitPrescription() {
+  //   if (_selectedImage != null) {
+  //     _showConfirmationSnackbar("Prescription submitted successfully!");
+  //   } else {
+  //     _showConfirmationSnackbar("Please upload a prescription first.");
+  //   }
+  // }
 
 
   Widget _buildUploadSection() {

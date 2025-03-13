@@ -141,18 +141,18 @@ class _CartState extends State<Cart> {
               backgroundColor: Colors.green.shade700,
               elevation: 0,
               centerTitle: true,
-              leading: IconButton(
-                icon: Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () {
-                  if (Navigator.canPop(context)) {
+              leading: Container(
+                margin: EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.green[400],
+                ),
+                child: IconButton(
+                  icon: Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () {
                     Navigator.pop(context);
-                  } else {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => HomePage()),
-                    );
-                  }
-                },
+                  },
+                ),
               ),
 
               title: const Text(
@@ -248,6 +248,7 @@ class _CartState extends State<Cart> {
     );
   }
 
+
   Widget _buildCheckoutSection(CartProvider cart) {
     List<String> pickupLocations = [
       'Madina Mall',
@@ -256,77 +257,74 @@ class _CartState extends State<Cart> {
       'Takoradi Mall',
     ];
 
+
     return Container(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.2),
-            spreadRadius: 3,
-            blurRadius: 8,
-            offset: const Offset(0, -2),
+            spreadRadius: 2,
+            blurRadius: 6,
+            offset: const Offset(0, -1),
           ),
         ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Delivery or Pickup Option
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('Delivery Option:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              const SizedBox(width: 8),
+              const Text('Delivery:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
               _buildRadioButton('Delivery'),
-              const SizedBox(width: 10),
               _buildRadioButton('Pickup'),
             ],
           ),
 
-          // Conditional UI for Delivery or Pickup
+          // **Delivery Address or Pickup Location**
           if (deliveryOption == 'Delivery') ...[
             _buildRegionDropdown(),
             _buildCityDropdown(),
-            _buildTownDropdown(), // Correctly displays towns
+            _buildTownDropdown(),
           ] else ...[
             DropdownButtonFormField<String>(
-              decoration: InputDecoration(labelText: 'Select Pickup Location'),
+              decoration: const InputDecoration(labelText: 'Pickup Location'),
               value: selectedTown,
               items: pickupLocations.map((location) {
-                return DropdownMenuItem(
-                  value: location,
-                  child: Text(location),
-                );
+                return DropdownMenuItem(value: location, child: Text(location, style: const TextStyle(fontSize: 14)));
               }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedTown = value;
-                });
-              },
+              onChanged: (value) => setState(() => selectedTown = value),
             ),
           ],
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 5), // Reduced spacing
 
+          // **Price Details**
           _buildPriceDetails(cart),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
 
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 40),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          // **Checkout Button**
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                padding: const EdgeInsets.symmetric(vertical: 12), // Smaller button padding
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () => _handleCheckout(context),
+              child: const Text('Checkout', style: TextStyle(fontSize: 16, color: Colors.white)),
             ),
-            onPressed: () => _handleCheckout(context),
-            child: const Text('Checkout', style: TextStyle(fontSize: 18, color: Colors.white)),
           ),
         ],
       ),
     );
   }
+
 
 
 

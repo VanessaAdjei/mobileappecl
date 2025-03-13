@@ -27,13 +27,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   void _signUp(String name, String email, String password, String confirmPassword, String phoneNumber) async {
-    // Trim inputs
     email = email.trim();
     password = password.trim();
     confirmPassword = confirmPassword.trim();
     phoneNumber = phoneNumber.trim();
 
-    // Validate inputs
     if (name.isEmpty || email.isEmpty || password.isEmpty || phoneNumber.isEmpty) {
       _showError("All fields are required");
       return;
@@ -49,34 +47,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
-    // Use AuthService to sign up
     bool signUpSuccess = await AuthService.signUp(name, email, password, phoneNumber);
 
     if (signUpSuccess) {
-      // Generate OTP
-      String otp = (100000 + (DateTime.now().millisecondsSinceEpoch % 900000)).toString();
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('otp_$email', otp);
 
-      // Simulating OTP sending
-      print("OTP sent to $email: $otp");
-
-      // Clear input fields
-      nameController.clear();
-      emailController.clear();
-      passwordController.clear();
-      confirmPasswordController.clear();
-      phoneNumberController.clear();
-
-      // Navigate to OTP verification screen
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => OtpVerificationScreen(email: email, otp: otp)),
+        MaterialPageRoute(builder: (context) => OtpVerificationScreen(email: email, otp: '',)),
       );
     } else {
-      _showError("User already exists");
+      _showError("Signup failed. Try again.");
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
