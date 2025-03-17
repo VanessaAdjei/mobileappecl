@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
-import 'Cart.dart';
 
 class PrescriptionUploadPage extends StatefulWidget {
   @override
@@ -10,17 +9,19 @@ class PrescriptionUploadPage extends StatefulWidget {
 }
 
 class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
-  File? _selectedImage;
+  List<File> _selectedImages = [];
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
 
   void _chooseFromGallery() async {
     setState(() => _isLoading = true);
     try {
-      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        setState(() => _selectedImage = File(pickedFile.path));
-        _showConfirmationSnackbar("Prescription uploaded successfully!");
+      final List<XFile>? pickedFiles = await _picker.pickMultiImage();
+      if (pickedFiles != null && pickedFiles.isNotEmpty) {
+        setState(() {
+          _selectedImages.addAll(pickedFiles.map((file) => File(file.path)));
+        });
+        _showConfirmationSnackbar("Prescriptions uploaded successfully!");
       } else {
         _showConfirmationSnackbar("No image selected.");
       }
@@ -41,15 +42,15 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
     );
   }
 
-  void _showImageDialog(BuildContext context, String imagePath) {
+  void _showFullImageDialog(BuildContext context, File imageFile) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return Dialog(
           child: Container(
-            width: MediaQuery.of(context).size.width * 2,
+            width: MediaQuery.of(context).size.width * 0.8,
             child: InteractiveViewer(
-              child: Image.asset(imagePath, fit: BoxFit.contain),
+              child: Image.file(imageFile, fit: BoxFit.contain),
             ),
           ),
         );
@@ -58,10 +59,10 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
   }
 
   void _submitPrescription() async {
-    if (_selectedImage != null) {
+    if (_selectedImages.isNotEmpty) {
       _showConfirmationSnackbar("Prescription submitted successfully!");
       final String phoneNumber = "+233504518047";
-      final String message = "Hello, I am submitting my prescription.";
+      final String message = "Hello, I am submitting my prescriptions.";
       final Uri whatsappUrl = Uri.parse("https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}");
 
       try {
@@ -71,8 +72,15 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
         _showConfirmationSnackbar("Could not open WhatsApp.");
       }
     } else {
-      _showConfirmationSnackbar("Please upload a prescription first.");
+      _showConfirmationSnackbar("Please upload at least one prescription.");
     }
+  }
+
+  void _deleteImage(int index) {
+    setState(() {
+      _selectedImages.removeAt(index);
+    });
+    _showConfirmationSnackbar("Image deleted successfully!");
   }
 
   @override
@@ -113,12 +121,7 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
             child: IconButton(
               icon: Icon(Icons.shopping_cart, color: Colors.white),
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const Cart(),
-                  ),
-                );
+                // Navigate to Cart page if needed
               },
             ),
           ),
@@ -131,47 +134,40 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildUploadSection(),
-              SizedBox(height: 5),
-              if (_selectedImage != null) _buildSelectedImageSection(context),
-              SizedBox(height: 10),
-              if (_selectedImage != null) // Display Submit button only if an image is selected
-                ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _submitPrescription,
-                  icon: Icon(Icons.send, color: Colors.white),
-                  label: Text("Submit Prescription"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade700,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 2,
-                    shadowColor: Colors.green.shade200,
+              const SizedBox(height: 10),
+
+              // Display selected images if any
+              if (_selectedImages.isNotEmpty) _buildImageGrid(),
+              const SizedBox(height: 10),
+
+              // Submit button (enabled only if images are selected)
+              ElevatedButton.icon(
+                onPressed: (_selectedImages.isEmpty || _isLoading) ? null : _submitPrescription,
+                icon: const Icon(Icons.send, color: Colors.white),
+                label: const Text("Submit Prescription"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade700,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  elevation: 2,
+                  shadowColor: Colors.green.shade200,
                 ),
-              SizedBox(height: 20),
+              ),
+              const SizedBox(height: 20),
               _buildRequirementsSection(),
-              SizedBox(height: 5),
               _buildSamplePrescriptionSection(),
-              SizedBox(height: 5),
               _buildWarningSection(),
             ],
           ),
         ),
       ),
+
       backgroundColor: Colors.green.shade50,
     );
   }
-  //
-  // void _submitPrescription() {
-  //   if (_selectedImage != null) {
-  //     _showConfirmationSnackbar("Prescription submitted successfully!");
-  //   } else {
-  //     _showConfirmationSnackbar("Please upload a prescription first.");
-  //   }
-  // }
-
 
   Widget _buildUploadSection() {
     return Card(
@@ -189,7 +185,7 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
                 Icon(Icons.upload, size: 24, color: Colors.green.shade700),
                 SizedBox(width: 10),
                 Text(
-                  "Upload Prescription",
+                  "Upload Prescription(s)",
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
@@ -230,7 +226,6 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
 
             SizedBox(height: 10),
 
-
             Text(
               "Supported formats: JPG, PNG",
               style: TextStyle(
@@ -246,78 +241,34 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
     );
   }
 
-  Widget _buildSelectedImageSection(BuildContext context) {
-    if (_selectedImage == null) return SizedBox();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        GestureDetector(
-          onTap: () {
-            _showFullImageDialog(context, _selectedImage!);
-          },
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.file(
-              _selectedImage!,
-              height: 120, // Reduced size
-              fit: BoxFit.contain,
-            ),
-          ),
-        ),
-        SizedBox(height: 10), // Spacing
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildImageGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 5,
+        mainAxisSpacing: 5,
+      ),
+      itemCount: _selectedImages.length,
+      itemBuilder: (context, index) {
+        return Stack(
           children: [
-            ElevatedButton.icon(
-              onPressed: _deleteImage,
-              icon: Icon(Icons.delete, color: Colors.white),
-              label: Text("Delete"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
+            GestureDetector(
+              onTap: () => _showFullImageDialog(context, _selectedImages[index]),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.file(_selectedImages[index], fit: BoxFit.cover),
               ),
             ),
-            SizedBox(width: 10), // Spacing
-            ElevatedButton.icon(
-              onPressed: _chooseFromGallery,
-              icon: Icon(Icons.image, color: Colors.white),
-              label: Text("Choose New"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
+            Positioned(
+              right: 0,
+              child: IconButton(
+                icon: Icon(Icons.cancel, color: Colors.red),
+                onPressed: () => _deleteImage(index),
               ),
             ),
           ],
-        ),
-      ],
-    );
-  }
-
-  // Function to delete the selected image
-  void _deleteImage() {
-    setState(() {
-      _selectedImage = null; // Clear the selected image
-    });
-    _showConfirmationSnackbar("Image deleted successfully!");
-  }
-
-  void _showFullImageDialog(BuildContext context, File imageFile) {
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withOpacity(0.9), // Dark background for focus
-      builder: (context) {
-        return GestureDetector(
-          onTap: () => Navigator.pop(context), // Close on tap
-          child: Container(
-            color: Colors.transparent, // Remove any white backdrop
-            child: Center(
-              child: Image.file(
-                imageFile,
-                fit: BoxFit.contain, // Ensure proper scaling
-              ),
-            ),
-          ),
         );
       },
     );
@@ -328,20 +279,18 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text("Prescription Requirements:", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: Colors.green.shade600)),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _infoChip("Doctor Details", Icons.person),
-            _infoChip("Date of Prescription", Icons.date_range),
-            _infoChip("Patient Details", Icons.account_circle),
-            _infoChip("Medicine Details", Icons.medication),
-            _infoChip("Max File Size: 10MB", Icons.upload_file),
-          ],
-        ),
+        Wrap(spacing: 3, children: [
+          _infoChip("Doctor Details", Icons.person),
+          _infoChip("Date of Prescription", Icons.date_range),
+          _infoChip("Patient Details", Icons.account_circle),
+          _infoChip("Medicine Details", Icons.medication),
+          _infoChip("Max File Size: 10MB", Icons.upload_file),
+        ]),
       ],
     );
   }
+
+  Widget _infoChip(String text, IconData icon) => Chip(label: Text(text), avatar: Icon(icon, color: Colors.green.shade700));
 
   Widget _buildSamplePrescriptionSection() {
     return Center(
@@ -356,9 +305,9 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
               color: Colors.green.shade600,
             ),
           ),
-          SizedBox(height: 8), // Add spacing
+          SizedBox(height: 8),
           GestureDetector(
-            onTap: () => _showImageDialog(context, "assets/images/prescriptionsample.png"),
+            onTap: () => _showFullImageDialog(context, File("assets/images/prescriptionsample.png")),
             child: Card(
               elevation: 2,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -366,7 +315,7 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
                 borderRadius: BorderRadius.circular(12),
                 child: Image.asset(
                   "assets/images/prescriptionsample.png",
-                  height: 180,
+                  height: 150,
                   fit: BoxFit.cover,
                 ),
               ),
@@ -388,15 +337,6 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _infoChip(String label, IconData icon) {
-    return Chip(
-      avatar: Icon(icon, size: 18, color: Colors.green.shade600),
-      label: Text(label, style: TextStyle(fontSize: 14, color: Colors.green.shade800)),
-      backgroundColor: Colors.green.shade100,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     );
   }
 }

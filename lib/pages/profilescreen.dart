@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -93,19 +94,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
 
   Future<void> _loadUserData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? name = prefs.getString(AuthService.userNameKey) ?? "User";
-    String? email = prefs.getString(AuthService.userEmailKey) ?? "No email available";
-    String? phoneNumber = prefs.getString(AuthService.userPhoneNumberKey) ?? "";
+    final secureStorage = FlutterSecureStorage();
+
+    print("Loading User Data with keys: 'userName', 'userEmail', 'phoneNumber'");
+
+    String name = await secureStorage.read(key: 'userName') ?? "User";
+    String email = await secureStorage.read(key: 'userEmail') ?? "No email available";
+    String phoneNumber = await secureStorage.read(key: 'phoneNumber') ?? "";
+
+    print("Retrieved User Data:");
+    print("Name: $name");
+    print("Email: $email");
+    print("Phone: $phoneNumber");
+
     setState(() {
       _userName = name;
       _userEmail = email;
       _phoneNumber = phoneNumber;
-      _userNameController.text = _userName;
-      _userEmailController.text = _userEmail;
-      _phoneNumberController.text = _phoneNumber;
+
+      _userNameController.text = name;
+      _userEmailController.text = email;
+      _phoneNumberController.text = phoneNumber;
     });
   }
+
+
+
 
   @override
   Widget build(BuildContext context) {

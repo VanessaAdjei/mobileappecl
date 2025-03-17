@@ -53,7 +53,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => OtpVerificationScreen(email: email, otp: '',)),
+        MaterialPageRoute(builder: (context) => OtpVerificationScreen(email: email)),
+
       );
     } else {
       _showError("Signup failed. Try again.");

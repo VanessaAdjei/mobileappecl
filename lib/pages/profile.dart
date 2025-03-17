@@ -3,6 +3,7 @@ import 'package:eclapp/pages/purchases.dart';
 import 'package:eclapp/pages/settings.dart';
 import 'package:eclapp/pages/signinpage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -42,20 +43,25 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<void> _loadUserData() async {
-    String? name = await AuthService.getUserName();
-    String? email = await AuthService.getUserEmail();
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? imagePath = prefs.getString('profile_image_path');
+    final secureStorage = FlutterSecureStorage();
+
+    print("Loading User Data with keys: 'userName', 'userEmail', 'phoneNumber'");
+
+    String name = await secureStorage.read(key: 'userName') ?? "User";
+    String email = await secureStorage.read(key: 'userEmail') ?? "No email available";
+    String phoneNumber = await secureStorage.read(key: 'phoneNumber') ?? "";
+
+    print("Retrieved User Data:");
+    print("Name: $name");
+    print("Email: $email");
+    print("Phone: $phoneNumber");
 
     setState(() {
-      _userName = name ?? "User";
-      _userEmail = email ?? "No email available";
-      _profileImagePath = imagePath;
-      if (_profileImagePath != null) {
-        _profileImage = File(_profileImagePath!);
-      }
+      _userName = name;
+      _userEmail = email;
     });
   }
+
 
   Future<void> _pickImage() async {
     var status = await Permission.storage.request();
@@ -91,6 +97,7 @@ class _ProfileState extends State<Profile> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
+        debugPrint("Back button pressed. Navigating to HomePage...");
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => HomePage()),
@@ -98,6 +105,7 @@ class _ProfileState extends State<Profile> {
         );
         return Future.value(false);
       },
+
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.green.shade700,
@@ -154,7 +162,7 @@ class _ProfileState extends State<Profile> {
               const SizedBox(height: 24),
               _buildProfileOption(Icons.notifications_outlined, "Notifications", () => _navigateTo(NotificationsScreen())),
               _buildProfileOption(Icons.shopping_bag_outlined, "Purchases", () => _navigateTo(PurchaseScreen())),
-              _buildProfileOption(Icons.settings_outlined, "Settings", () => _navigateTo(SettingsScreen(toggleDarkMode: (bool value) {}))),
+              _buildProfileOption(Icons.settings_outlined, "Settings", () => _navigateTo(SettingsScreen())),
             _buildProfileOption(Icons.logout, "Logout", () {
               AuthService.signOut().then((_) {
                 Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => SignInScreen()));
@@ -184,35 +192,22 @@ class _ProfileState extends State<Profile> {
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-            GestureDetector(
-            onTap: _pickImage,
-            child: Container(
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.green.shade100,
-                image: _profileImage != null
-                    ? DecorationImage(
-                  image: FileImage(_profileImage!),
-                  fit: BoxFit.cover,
-                )
-                    : (_profileImagePath != null && File(_profileImagePath!).existsSync())
-                    ? DecorationImage(
-                  image: FileImage(File(_profileImagePath!)),
-                  fit: BoxFit.cover,
-                )
-                    : const DecorationImage(
-                  image: NetworkImage("https://via.placeholder.com/150"),
-                  fit: BoxFit.cover,
+              GestureDetector(
+                onTap: _pickImage,
+                child: CircleAvatar(
+                  radius: 30,
+                  backgroundImage: _profileImage != null
+                      ? FileImage(_profileImage!)
+                      : (_profileImagePath != null && File(_profileImagePath!).existsSync()
+                      ? FileImage(File(_profileImagePath!))
+                      : const AssetImage("assets/images/default_avatar.png") as ImageProvider),
+                  child: _profileImage == null && _profileImagePath == null
+                      ? Icon(Icons.person, size: 50, color: Colors.white)
+                      : null,
                 ),
-              ),
 
-              child: _profileImage == null && _profileImagePath == null
-                  ? const Icon(Icons.camera_alt, size: 30, color: Colors.white)
-                  : null,
-            ),
-          ),
+
+              ),
           const SizedBox(width: 20),
           Expanded(
             child: Column(
@@ -253,7 +248,7 @@ class _ProfileState extends State<Profile> {
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-          child: Row( 
+          child: Row(
             children: [
               Icon(icon, color: Colors.green.shade700, size: 28),
               const SizedBox(width: 16),

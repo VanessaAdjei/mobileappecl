@@ -134,31 +134,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  int _selectedIndex = 0;
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    switch (index) {
-      case 0:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
-        break;
-      case 1:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const Cart()));
-        break;
-      case 2:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => CategoryPage()));
-        break;
-      case 3:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => Profile()));
-        break;
-      case 4:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => StoreSelectionPage()));
-        break;
-    }
-  }
 
   void _filterProducts(String query) {
     setState(() {
@@ -303,7 +278,7 @@ class _HomePageState extends State<HomePage> {
 
     PageController _pageController = PageController();
 
-    Timer.periodic(Duration(seconds: 3), (timer) {
+    Timer.periodic(Duration(seconds: 5), (timer) {
       if (_pageController.hasClients) {
         int nextPage = (_pageController.page?.toInt() ?? 0) + 1;
         if (nextPage >= imageUrls.length) nextPage = 0;
@@ -347,8 +322,8 @@ class _HomePageState extends State<HomePage> {
         );
       },
       child: SizedBox(
-        width: 180, // Adjust width
-        height: 240, // Adjust height
+        width: 180,
+        height: 240,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -362,7 +337,7 @@ class _HomePageState extends State<HomePage> {
               child: Text(
                 product['name']!,
                 style: TextStyle(
-                  fontSize: 14, // Reduce font size
+                  fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: Colors.green[800],
                 ),
@@ -412,7 +387,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildContactRow(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8), // Reduce padding here
+      padding: const EdgeInsets.all(8),
       child: Wrap(
         spacing: 16, // Reduce spacing here
         alignment: WrapAlignment.center,
@@ -527,7 +502,7 @@ class _HomePageState extends State<HomePage> {
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.only(top: 70),
+                            padding: const EdgeInsets.only(top: 50),
                             child: SizedBox(
                               height: 110,
                               width: 100,
@@ -653,7 +628,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
-          // Add the "Contact Us" button here
           Positioned(
             bottom: 20,
             right: 20,
@@ -669,7 +643,7 @@ class _HomePageState extends State<HomePage> {
                   onPressed: () => _showContactOptions("+233504518047"),
                   child: Icon(Icons.phone, size: 30, color: Colors.black),
                 ),
-                SizedBox(height: 8), // Space between icon and text
+                SizedBox(height: 8),
               ],
             ),
           ),

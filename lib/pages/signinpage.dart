@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:eclapp/pages/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'createaccount.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SignInScreen extends StatefulWidget {
   @override
@@ -14,8 +15,10 @@ class _SignInScreenState extends State<SignInScreen> {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final FlutterSecureStorage secureStorage = FlutterSecureStorage();
   bool _obscurePassword = true;
   bool _isLoading = false;
+
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -23,50 +26,49 @@ class _SignInScreenState extends State<SignInScreen> {
     );
   }
 
+
   void _signIn(String email, String password) async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? usersJson = prefs.getString('users');
+      bool isAuthenticated = await AuthService.signIn(email, password);
 
-      if (usersJson == null) {
-        _showError("No users found");
-        return;
+      if (isAuthenticated) {
+        // Retrieve stored user details from secure storage
+        String? userName = await secureStorage.read(key: 'userName');
+        String? userPhone = await secureStorage.read(key: 'userPhone');
+        String? userEmail = await secureStorage.read(key: 'userEmail');
+
+        if (userName != null && userEmail != null) {
+          print("✅ Sign-In Successful! User: $userName, Email: $userEmail, Phone: ${userPhone ?? 'N/A'}");
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const Cart()),
+          );
+        } else {
+          _showError("Failed to retrieve user details.");
+        }
+      } else {
+        _showError("Invalid email or password.");
       }
-
-      Map<String, dynamic> users = jsonDecode(usersJson);
-
-      // Hash the input password
-      String hashedPassword = AuthService.hashPassword(password);
-
-      // Print all users and passwords (for debugging)
-      // users.forEach((key, value) {
-      //   print("User: $key, Password: ${value['password']}");
-      // });
-
-      if (!users.containsKey(email) || users[email]["password"] != hashedPassword) {
-        _showError("Invalid email or password");
-        return;
-      }
-
-      await prefs.setBool('isLoggedIn', true);
-      await AuthService.saveUserDetails(users[email]["name"], email, users[email]["phoneNumber"] ?? "");
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const Cart()),
-      );
     } catch (e) {
       _showError("An error occurred during sign-in.");
+      print("🚨 Sign-In Error: $e");
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
   }
+
+
+
+
+
+
 
   @override
   Widget build(BuildContext context) {

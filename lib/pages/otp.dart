@@ -1,16 +1,11 @@
-import 'dart:convert';
-import 'dart:math';
 import 'package:eclapp/pages/signinpage.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_service.dart';
-
 
 class OtpVerificationScreen extends StatefulWidget {
   final String email;
-  final String otp; // Add this
 
-  const OtpVerificationScreen({Key? key, required this.email, required this.otp}) : super(key: key);
+  const OtpVerificationScreen({Key? key, required this.email}) : super(key: key);
 
   @override
   _OtpVerificationScreenState createState() => _OtpVerificationScreenState();
@@ -18,11 +13,18 @@ class OtpVerificationScreen extends StatefulWidget {
 
 class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   final TextEditingController otpController = TextEditingController();
+  bool isLoading = false;
 
-  void _verifyOtp() async {
-    if (widget.otp == otpController.text.trim()) {
+  Future<void> _verifyOtp() async {
+    setState(() => isLoading = true);
+
+    bool isVerified = await AuthService.verifyOTP(widget.email, otpController.text.trim());
+
+    setState(() => isLoading = false);
+
+    if (isVerified) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("OTP verified successfully!"))
+        SnackBar(content: Text("OTP verified successfully!")),
       );
 
       // Navigate to Sign In page
@@ -32,7 +34,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Invalid OTP. Please try again."))
+        SnackBar(content: Text("Invalid OTP. Please try again.")),
       );
     }
   }
@@ -53,7 +55,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               decoration: InputDecoration(labelText: "OTP"),
             ),
             SizedBox(height: 20),
-            ElevatedButton(
+            isLoading
+                ? CircularProgressIndicator()
+                : ElevatedButton(
               onPressed: _verifyOtp,
               child: Text("Verify OTP"),
             ),
@@ -63,6 +67,3 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     );
   }
 }
-
-
-

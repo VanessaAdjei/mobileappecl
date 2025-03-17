@@ -1,38 +1,42 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-
-  static const String baseUrl = "http://eclcommerce.test/api";
-
+  static const String baseUrl = "https://eclcommerce.ernestchemists.com.gh/api";
   static const String usersKey = "users";
   static const String loggedInUserKey = "loggedInUser";
   static const String isLoggedInKey = "isLoggedIn";
   static const String userNameKey = "userName";
   static const String userEmailKey = "userEmail";
   static const String userPhoneNumberKey = "userPhoneNumber";
+  static const String authTokenKey = 'authToken';
+  static final FlutterSecureStorage secureStorage = FlutterSecureStorage();
 
 
   static String hashPassword(String password) {
-    var bytes = utf8.encode(password);
-    var digest = sha256.convert(bytes);
-    return digest.toString();
+    return sha256.convert(utf8.encode(password)).toString();
   }
 
-  static Future<void> clearAllUsers() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(usersKey);
-    await prefs.remove(loggedInUserKey);
-    await prefs.remove(isLoggedInKey);
-    await prefs.remove(userNameKey);
-    await prefs.remove(userEmailKey);
-    await prefs.remove(userPhoneNumberKey);
-  }
+  // static Future<void> clearAllUsers() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   await prefs.remove(usersKey);
+  //   await prefs.remove(loggedInUserKey);
+  //   await prefs.remove(isLoggedInKey);
+  //   await prefs.remove(userNameKey);
+  //   await prefs.remove(userEmailKey);
+  //   await prefs.remove(userPhoneNumberKey);
+  // }
 
 
-  // Sign up a new user
+
+
+
+
+  // Sign up  user
   static Future<bool> signUp(String name, String email, String password, String phoneNumber) async {
     final url = Uri.parse('$baseUrl/register');
 
@@ -44,16 +48,15 @@ class AuthService {
           "name": name,
           "email": email,
           "password": password,
-          "phone_number": phoneNumber,
+          "phone": phoneNumber,
         }),
       );
 
       if (response.statusCode == 201) {
-        return true; // Successfully registered
+        return true;
       } else {
         print("Signup failed: ${response.body}");
-        print(response.body);
-        return false; // User already exists or another issue
+        return false;
       }
     } catch (error) {
       print("Error during signup: $error");
@@ -63,30 +66,108 @@ class AuthService {
 
 
 
-  static Future<bool> signIn(String email, String password) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? usersJson = prefs.getString(usersKey);
-    Map<String, dynamic> users = usersJson != null ? json.decode(usersJson) : {};
+  // OTP
+  static Future<bool> verifyOTP(String email, String otp) async {
+    final url = Uri.parse('https://eclcommerce.ernestchemists.com.gh/api/otp-verification');
 
-    email = email.trim().toLowerCase();
-    String hashedPassword = hashPassword(password);
-    print("Attempting Sign-In for Email: $email");
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"email": email, "otp": otp}),
+      );
 
-    if (!users.containsKey(email)) {
-      print("Email not found.");
+      if (response.statusCode == 200) {
+        print("OTP Verified Successfully!");
+        return true;
+      } else {
+        print("OTP Verification Failed: ${response.body}");
+        return false;
+      }
+    } catch (error) {
+      print("Error during OTP verification: $error");
       return false;
     }
-
-    if (users[email]["password"] != hashedPassword) {
-      print("Incorrect password.");
-      return false;
-    }
-
-    print("Sign-In Successful!");
-    await prefs.setBool(isLoggedInKey, true);
-    await prefs.setString(loggedInUserKey, email);
-    return true;
   }
+
+
+  // Sign in a  user
+  static Future<bool> signIn(String email, String password) async {
+    final url = Uri.parse('$baseUrl/login');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email.trim().toLowerCase(), 'password': password}),
+      );
+
+      final responseData = jsonDecode(response.body);
+
+      print("🔹 API Response: ${response.body}");
+
+      if (response.statusCode == 200 && responseData.containsKey('access_token')) {
+        String authToken = responseData['access_token'];
+        Map<String, dynamic>? user = responseData['user'];
+
+        if (user == null) {
+          print("⚠️ User data is missing in the response.");
+          return false;
+        }
+
+        String userName = user['name']?.toString() ?? "User";
+        String userEmail = user['email'] ?? "No email available";
+        String userPhone = user['phone'] ?? "No phone available";
+
+        // Store authentication token securely
+        await secureStorage.write(key: authTokenKey, value: authToken);
+
+        // Store user details
+        await saveUserDetails(userName, userEmail, userPhone);
+
+        // Debug: Confirm stored data
+        print("✅ Sign-In Successful!");
+        print("📌 Stored User Data:");
+        print("👤 Name: $userName");
+        print("📧 Email: $userEmail");
+        print("📱 Phone: $userPhone");
+
+        return true;
+      } else {
+        String errorMessage = responseData['message'] ?? 'Unknown error';
+        print("❌ Login Failed: $errorMessage");
+        return false;
+      }
+    } catch (e) {
+      print("🚨 AuthService Error during sign-in: $e");
+      return false;
+    }
+  }
+
+  static Future<void> saveUserDetails(String name, String email, String phone) async {
+    await secureStorage.write(key: 'userName', value: name);
+    await secureStorage.write(key: 'userEmail', value: email);
+    await secureStorage.write(key: 'userPhone', value: phone);
+  }
+
+
+
+
+  static Future<String?> getUserName() async {
+    try {
+      String? userName = await secureStorage.read(key: userNameKey);
+      print("Retrieved User Name: $userName");
+
+      return userName?.isNotEmpty == true ? userName : "User";
+    } catch (e) {
+      print("Error retrieving user name: $e");
+      return "User";
+    }
+  }
+
+
+
+
 
 
   static Future<void> saveProfileImage(String imagePath) async {
@@ -99,55 +180,71 @@ class AuthService {
     return prefs.getString('profile_image');
   }
 
-  static Future<void> saveUserDetails(String name, String email, String phoneNumber) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(userNameKey, name);
-    await prefs.setString(userEmailKey, email);
-    await prefs.setString(userPhoneNumberKey, phoneNumber);
 
-    print("Saved Data -> Name: $name, Email: $email, Phone: $phoneNumber");
-  }
 
   static Future<Map<String, String>?> getCurrentUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? email = prefs.getString(loggedInUserKey);
-    if (email == null) return null;
+    try {
+      String? email = await secureStorage.read(key: loggedInUserKey);
+      if (email == null) {
+        print("No logged-in user found.");
+        return null;
+      }
 
-    String? usersData = prefs.getString(usersKey);
-    if (usersData == null) return null;
+      String? usersData = await secureStorage.read(key: usersKey);
+      if (usersData == null) {
+        print("No users data found.");
+        return null;
+      }
 
-    Map<String, Map<String, String>> users =
-    Map<String, Map<String, String>>.from(json.decode(usersData));
-    return users[email];
+      Map<String, Map<String, String>> users =
+      Map<String, Map<String, String>>.from(json.decode(usersData));
+
+      print("Current User: ${users[email]}");
+      return users[email];
+    } catch (e) {
+      print("Error retrieving user: $e");
+      return null;
+    }
   }
 
 
 
   static Future<void> signOut() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(loggedInUserKey);
-    await prefs.setBool(isLoggedInKey, false);
-    await prefs.remove(userNameKey);
-    await prefs.remove(userEmailKey);
-    await prefs.remove(userPhoneNumberKey);
+    try {
+      await secureStorage.delete(key: loggedInUserKey);
+      await secureStorage.delete(key: userNameKey);
+      await secureStorage.delete(key: userEmailKey);
+      await secureStorage.delete(key: userPhoneNumberKey);
+
+      print("User successfully signed out.");
+    } catch (e) {
+      print("Error during sign-out: $e");
+    }
   }
 
   static Future<bool> isLoggedIn() async {
-    final prefs = await SharedPreferences.getInstance();
-    bool loggedIn = prefs.getBool(isLoggedInKey) ?? false;
-    String? loggedInUser = prefs.getString(loggedInUserKey);
+    String? authToken = await secureStorage.read(key: 'authToken');
 
-    return loggedIn && loggedInUser != null;
+    if (authToken == null || JwtDecoder.isExpired(authToken)) {
+      await logout();
+      return false;
+    }
+
+    return true;
   }
 
+  /// Logs out the user by clearing secure storage
+  static Future<void> logout() async {
+    await secureStorage.deleteAll();
+    print("User logged out.");
+  }
 
+  /// Checks if a user is signed up based on email
   static Future<bool> isUserSignedUp(String email) async {
-    final prefs = await SharedPreferences.getInstance();
-    String? usersData = prefs.getString(usersKey);
-
-    if (usersData == null) return false;
-
     try {
+      String? usersData = await secureStorage.read(key: usersKey);
+      if (usersData == null) return false;
+
       Map<String, dynamic> rawUsers = json.decode(usersData);
       Map<String, Map<String, String>> users = rawUsers.map(
             (key, value) => MapEntry(key, Map<String, String>.from(value)),
@@ -161,88 +258,99 @@ class AuthService {
   }
 
 
-  static Future<String?> getUserName() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(userNameKey);
-  }
 
+  /// Retrieves the stored user email
   static Future<String?> getUserEmail() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(userEmailKey);
+    try {
+      return await secureStorage.read(key: userEmailKey);
+    } catch (e) {
+      print("❌ Error retrieving user email: $e");
+      return null;
+    }
   }
 
+  /// Retrieves the stored phone number
   static Future<String?> getUserPhoneNumber() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? email = prefs.getString(loggedInUserKey);
-    print("Logged-in User Email: $email"); // Debug log
-
-    if (email != null) {
-      String? usersData = prefs.getString(usersKey);
-      print("Users Data: $usersData"); // Debug log
-
-      if (usersData != null) {
-        Map<String, Map<String, String>> users =
-        Map<String, Map<String, String>>.from(json.decode(usersData));
-        String? phoneNumber = users[email]?['phoneNumber'];
-        print("Retrieved Phone Number: $phoneNumber"); // Debug log
-        if (phoneNumber != null) {
-          return phoneNumber;
-        }
-      }
+    try {
+      return await secureStorage.read(key: userPhoneNumberKey);
+    } catch (e) {
+      print("❌ Error retrieving phone number: $e");
+      return null;
     }
-    return prefs.getString(userPhoneNumberKey);
   }
 
+  /// Debug method to print stored user data
   static Future<void> debugPrintUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? usersData = prefs.getString(usersKey);
-    print("DEBUG: Users Data: $usersData");
+    try {
+      String? usersData = await secureStorage.read(key: usersKey);
+      print("DEBUG: Users Data: $usersData");
+    } catch (e) {
+      print("Error retrieving user data for debugging: $e");
+    }
   }
 
-
+  /// Validates if the given password matches the stored password
   static Future<bool> validateCurrentPassword(String password) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userEmail = prefs.getString(loggedInUserKey);  // Updated key
-    if (userEmail != null) {
-      String? storedUserJson = prefs.getString(usersKey);
-      if (storedUserJson != null) {
-        Map<String, dynamic> users = Map<String, dynamic>.from(jsonDecode(storedUserJson));
-        if (users.containsKey(userEmail)) {
-          String storedHash = users[userEmail]['password'];
-          String inputHash = hashPassword(password);
-          print("Entered Hashed Password: $inputHash");
-          print("Stored Hashed Password: $storedHash");
-          return storedHash == inputHash;
+    try {
+      String? userEmail = await secureStorage.read(key: loggedInUserKey);
+      if (userEmail != null) {
+        String? storedUserJson = await secureStorage.read(key: usersKey);
+        if (storedUserJson != null) {
+          Map<String, dynamic> users = jsonDecode(storedUserJson);
+
+          if (users.containsKey(userEmail)) {
+            String storedHash = users[userEmail]['password'];
+            String inputHash = hashPassword(password);
+
+            print("Entered Hashed Password: $inputHash");
+            print("Stored Hashed Password: $storedHash");
+
+            return storedHash == inputHash;
+          }
         }
       }
-    }
-    return false;
-  }
-
-  static Future<bool> updatePassword(String oldPassword, String newPassword) async {
-    if (!(await validateCurrentPassword(oldPassword))) {
-      print("Old password does not match.");
+      print("User not found or no password stored.");
+      return false;
+    } catch (e) {
+      print("Error validating password: $e");
       return false;
     }
-
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userEmail = prefs.getString(loggedInUserKey);
-
-    if (userEmail != null) {
-      String? storedUserJson = prefs.getString(usersKey);
-      if (storedUserJson != null) {
-        Map<String, dynamic> users = jsonDecode(storedUserJson);
-        users[userEmail]['password'] = hashPassword(newPassword);
-        await prefs.setString(usersKey, jsonEncode(users));
-        print("Password updated for $userEmail");
-        return true;
-      }
-    }
-
-    print("Password update failed.");
-    return false;
   }
 
+  /// Updates the user's password
+  static Future<bool> updatePassword(String oldPassword, String newPassword) async {
+    try {
+      if (!(await validateCurrentPassword(oldPassword))) {
+        print("Old password does not match.");
+        return false;
+      }
+
+      String? userEmail = await secureStorage.read(key: loggedInUserKey);
+      if (userEmail != null) {
+        String? storedUserJson = await secureStorage.read(key: usersKey);
+        if (storedUserJson != null) {
+          Map<String, dynamic> users = jsonDecode(storedUserJson);
+          users[userEmail]['password'] = hashPassword(newPassword);
+
+          await secureStorage.write(key: usersKey, value: jsonEncode(users));
+          print("Password updated successfully for $userEmail");
+          return true;
+        }
+      }
+
+      print("Password update failed.");
+      return false;
+    } catch (e) {
+      print("Error updating password: $e");
+      return false;
+    }
+  }
+
+
+  static Future<void> saveUserName(String username) async {
+    await secureStorage.write(key: userNameKey, value: username);
+    print("Username saved: $username");
+  }
 
 
 

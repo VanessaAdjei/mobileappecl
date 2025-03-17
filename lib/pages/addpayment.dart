@@ -11,7 +11,6 @@ class AddPaymentPage extends StatefulWidget {
 }
 
 class _AddPaymentPageState extends State<AddPaymentPage> {
-  int _selectedIndex = 0;
   String? _selectedPaymentMethod;
   String? _selectedMoMoProvider;
   List<Map<String, String>> _paymentMethods = [];

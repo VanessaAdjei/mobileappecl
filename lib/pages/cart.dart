@@ -28,7 +28,6 @@ class _CartState extends State<Cart> {
   @override
   void initState() {
     super.initState();
-    _checkLoginStatus();
   }
 
   Map<String, Map<String, Map<String, double>>> locationFees = {
@@ -81,24 +80,14 @@ class _CartState extends State<Cart> {
       if (option == 'Pickup') {
         selectedRegion = null;
         selectedCity = null;
-        selectedTown = null;  // Ensure it's reset
+        selectedTown = null;
         deliveryFee = 0.00;
       }
     });
   }
 
 
-
-
-
   void _handleCheckout(BuildContext context) async {
-    if (context.read<CartProvider>().cartItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Your cart is empty!")),
-      );
-      return;
-    }
-
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
@@ -107,17 +96,34 @@ class _CartState extends State<Cart> {
         const SnackBar(content: Text("You need to sign in first.")),
       );
 
-      bool? result = await Navigator.push(
+      final result = await Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => SignInScreen()),
       );
 
-      if (result != true) return;
+      isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
     }
 
+    if (!isLoggedIn) {
+      return;
+    }
+
+    if (context.read<CartProvider>().cartItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Your cart is empty!")),
+      );
+      return;
+    }
+
+    // Proceed with checkout
     context.read<CartProvider>().purchaseItems();
     context.read<CartProvider>().clearCart();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Purchase successful!")),
+    );
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -128,11 +134,15 @@ class _CartState extends State<Cart> {
             if (Navigator.canPop(context)) {
               return true;
             } else {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => HomePage()),
-                    (route) => false,
-              );
+              Future.delayed(Duration(milliseconds: 100), () {
+                if (context.mounted) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => HomePage()),
+                        (route) => false,
+                  );
+                }
+              });
               return false;
             }
           },

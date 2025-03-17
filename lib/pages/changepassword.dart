@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'Cart.dart';
 
 class ChangePasswordPage extends StatefulWidget {
@@ -9,6 +9,8 @@ class ChangePasswordPage extends StatefulWidget {
 
 class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final _formKey = GlobalKey<FormState>();
+  final _storage = FlutterSecureStorage();
+
   TextEditingController _currentPasswordController = TextEditingController();
   TextEditingController _newPasswordController = TextEditingController();
   TextEditingController _confirmPasswordController = TextEditingController();
@@ -16,19 +18,21 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   bool _obscureCurrentPassword = true;
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
-  String? _savedPassword;
+
+  FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    _loadSavedPassword();
-  }
-  Future<void> _loadSavedPassword() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _savedPassword = prefs.getString('password') ?? '';
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus) {
+        setState(() {
+          _obscureCurrentPassword = true;
+          _obscureNewPassword = true;
+          _obscureConfirmPassword = true;
+        });
+      }
     });
-    print("Current Saved Password: $_savedPassword");
   }
 
   @override
@@ -36,30 +40,35 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
   bool _isPasswordValid(String password) {
-    return password.length >= 6;
+    return RegExp(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$').hasMatch(password);
+  }
+
+  Future<String?> _getSavedPassword() async {
+    return await _storage.read(key: 'password');
   }
 
   Future<void> _changePassword() async {
+    String? savedPassword = await _getSavedPassword();
+
     if (_formKey.currentState!.validate()) {
-      if (_currentPasswordController.text != _savedPassword) {
+      if (_currentPasswordController.text != savedPassword) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Current password is incorrect")),
         );
         return;
       }
 
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('password', _newPasswordController.text);
+      await _storage.write(key: 'password', value: _newPasswordController.text);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Password changed successfully!")),
       );
 
-      // Clear fields
       _currentPasswordController.clear();
       _newPasswordController.clear();
       _confirmPasswordController.clear();
@@ -106,9 +115,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const Cart(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const Cart()),
                 );
               },
             ),
@@ -163,7 +170,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                     return 'Please enter a new password';
                   }
                   if (!_isPasswordValid(value)) {
-                    return 'Password must be at least 6 characters';
+                    return 'Password must be at least 6 characters and include letters and numbers';
                   }
                   return null;
                 },
@@ -206,7 +213,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                     color: Colors.white,
                   ),
                 ),
-
               ),
             ],
           ),
@@ -225,6 +231,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
+      focusNode: _focusNode,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: Colors.green[600]),
