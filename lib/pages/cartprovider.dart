@@ -80,14 +80,13 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Save purchased items to SharedPreferences
+
   Future<void> _savePurchasedItems() async {
     final prefs = await SharedPreferences.getInstance();
     final purchasedJson = jsonEncode(_purchasedItems.map((item) => item.toJson()).toList());
     await prefs.setString('purchasedItems', purchasedJson);
   }
 
-  // Load purchased items from SharedPreferences
   Future<void> _loadPurchasedItems() async {
     final prefs = await SharedPreferences.getInstance();
     final purchasedJson = prefs.getString('purchasedItems');

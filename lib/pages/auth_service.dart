@@ -14,7 +14,11 @@ class AuthService {
   static const String userEmailKey = "userEmail";
   static const String userPhoneNumberKey = "userPhoneNumber";
   static const String authTokenKey = 'authToken';
-  static final FlutterSecureStorage secureStorage = FlutterSecureStorage();
+  static final FlutterSecureStorage secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+  );
+
 
 
   static String hashPassword(String password) {
@@ -47,7 +51,7 @@ class AuthService {
         body: jsonEncode({
           "name": name,
           "email": email,
-          "password": password,
+          "password": hashPassword(password),
           "phone": phoneNumber,
         }),
       );
@@ -99,50 +103,69 @@ class AuthService {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email.trim().toLowerCase(), 'password': password}),
+        body: jsonEncode({
+          'email': email.trim().toLowerCase(),
+          'password': password,
+        }),
       );
 
-      final responseData = jsonDecode(response.body);
+      print("API Response Status: ${response.statusCode}");
 
-      print("🔹 API Response: ${response.body}");
-
-      if (response.statusCode == 200 && responseData.containsKey('access_token')) {
-        String authToken = responseData['access_token'];
-        Map<String, dynamic>? user = responseData['user'];
-
-        if (user == null) {
-          print("⚠️ User data is missing in the response.");
-          return false;
-        }
-
-        String userName = user['name']?.toString() ?? "User";
-        String userEmail = user['email'] ?? "No email available";
-        String userPhone = user['phone'] ?? "No phone available";
-
-        // Store authentication token securely
-        await secureStorage.write(key: authTokenKey, value: authToken);
-
-        // Store user details
-        await saveUserDetails(userName, userEmail, userPhone);
-
-        // Debug: Confirm stored data
-        print("✅ Sign-In Successful!");
-        print("📌 Stored User Data:");
-        print("👤 Name: $userName");
-        print("📧 Email: $userEmail");
-        print("📱 Phone: $userPhone");
-
-        return true;
-      } else {
-        String errorMessage = responseData['message'] ?? 'Unknown error';
-        print("❌ Login Failed: $errorMessage");
+      if (response.statusCode != 200) {
+        print("Login Failed: ${response.body}");
         return false;
       }
+
+      // Decode response safely
+      Map<String, dynamic> responseData;
+      try {
+        responseData = jsonDecode(response.body);
+      } catch (e) {
+        print("Error decoding JSON response: $e");
+        return false;
+      }
+
+      // Validate access token
+      if (!responseData.containsKey('access_token')) {
+        print("Login Failed: No access token found");
+        return false;
+      }
+
+      String authToken = responseData['access_token'];
+      Map<String, dynamic>? user = responseData['user'];
+
+      if (user == null) {
+        print("Login Failed: User data missing");
+        return false;
+      }
+
+      String userName = user['name']?.toString() ?? "User";
+      String userEmail = user['email'] ?? "No email available";
+      String userPhone = user['phone'] ?? "No phone available";
+
+      // Securely store authentication token
+      try {
+        await secureStorage.write(key: authTokenKey, value: authToken);
+      } catch (e) {
+        print("Error storing auth token: $e");
+        return false;
+      }
+
+      // Store user details
+      await saveUserDetails(userName, userEmail, userPhone);
+
+      // Debug: Confirm stored data
+      print("✅ Sign-In Successful!");
+      print("👤 Name: $userName");
+      print("📧 Email: $userEmail");
+
+      return true;
     } catch (e) {
-      print("🚨 AuthService Error during sign-in: $e");
+      print("AuthService Error during sign-in: $e");
       return false;
     }
   }
+
 
   static Future<void> saveUserDetails(String name, String email, String phone) async {
     await secureStorage.write(key: 'userName', value: name);
@@ -222,18 +245,43 @@ class AuthService {
     }
   }
 
-  static Future<bool> isLoggedIn() async {
-    String? authToken = await secureStorage.read(key: 'authToken');
 
-    if (authToken == null || JwtDecoder.isExpired(authToken)) {
-      await logout();
+
+  static Future<bool> isLoggedIn() async {
+    try {
+      String? authToken = await secureStorage.read(key: authTokenKey);
+      print("🔍 Checking login status... Token: $authToken");
+
+      if (authToken == null || authToken.isEmpty) {
+        print("Invalid or missing token.");
+        await logout();
+        return false;
+      }
+
+      print("✅ Token is valid.");
+      return true;
+    } catch (e) {
+      print("Error checking login status: $e");
       return false;
     }
-
-    return true;
   }
 
-  /// Logs out the user by clearing secure storage
+
+
+  static Future<void> saveToken(String token) async {
+    await secureStorage.write(key: authTokenKey, value: token);
+    print("Token saved: $token");
+  }
+
+
+  static bool isValidJwt(String token) {
+    final parts = token.split('.');
+    return parts.length == 3;
+  }
+
+
+
+
   static Future<void> logout() async {
     await secureStorage.deleteAll();
     print("User logged out.");

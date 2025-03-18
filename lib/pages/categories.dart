@@ -181,7 +181,7 @@ class _CategoryPageState extends State<CategoryPage> {
               color: Colors.green[700],
 
             ),
-            child:          IconButton(
+            child:IconButton(
               icon: Icon(Icons.shopping_cart, color: Colors.white),
               onPressed: () {
                 Navigator.push(
@@ -221,17 +221,16 @@ class _CategoryPageState extends State<CategoryPage> {
                 ),
               ),
             ),
-
-            // Category Grid
             Expanded(
               child: GridView.builder(
                 padding: const EdgeInsets.all(16.0),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 20,
-                  mainAxisSpacing: 20,
-                  childAspectRatio: 1,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.8,
                 ),
+
                 itemCount: _filteredCategories.length,
                 itemBuilder: (context, index) {
                   String categoryName = _filteredCategories[index];
@@ -264,7 +263,6 @@ class _CategoryPageState extends State<CategoryPage> {
   }
 }
 
-
 class CategoryGridItem extends StatelessWidget {
   final String categoryName;
   final List<String> subcategories;
@@ -283,16 +281,16 @@ class CategoryGridItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        elevation: 0,
+        margin: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
+            SizedBox(
+              height: 150,
+              width: double.infinity,
               child: ClipRRect(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 child: Image.asset(
                   imagePath,
                   fit: BoxFit.cover,
@@ -300,28 +298,30 @@ class CategoryGridItem extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(5.0),
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     categoryName,
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                       color: Colors.green.shade900,
                     ),
-                    maxLines: 1,
+                    textAlign: TextAlign.left,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 1),
+                  SizedBox(height: 2),
                   Text(
                     subcategories.join(', '),
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey.shade600,
                     ),
-                    maxLines: 1,
+                    textAlign: TextAlign.left,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -331,8 +331,10 @@ class CategoryGridItem extends StatelessWidget {
         ),
       ),
     );
+
   }
 }
+
 
 class SubcategoryPage extends StatefulWidget {
   final String categoryName;
@@ -384,7 +386,7 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
     final overlay = Overlay.of(context);
     final overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
-        top: 50, // Adjust this value to change the position
+        top: 50,
         left: MediaQuery.of(context).size.width * 0.1,
         width: MediaQuery.of(context).size.width * 0.8,
         child: Material(
@@ -407,7 +409,7 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
 
     overlay.insert(overlayEntry);
 
-    // Remove after 2 seconds
+
     Future.delayed(const Duration(seconds: 2), () {
       overlayEntry.remove();
     });
@@ -448,7 +450,7 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
               color: Colors.green[700],
 
             ),
-            child:          IconButton(
+            child: IconButton(
               icon: Icon(Icons.shopping_cart, color: Colors.white),
               onPressed: () {
                 Navigator.push(
@@ -464,7 +466,6 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
       ),
       body: Column(
         children: [
-          // Scrollable Subcategory Bar
           Container(
             height: 60,
             child: ListView.builder(
@@ -472,7 +473,6 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
               itemCount: widget.subcategories.length + 1,
               itemBuilder: (context, index) {
                 if (index == 0) {
-                  // "All" option
                   return GestureDetector(
                     onTap: _displayAllProducts,
                     child: Container(
@@ -542,13 +542,14 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
               ),
             )
                 : GridView.builder(
-              padding: const EdgeInsets.all(16.0),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, // 2 items per row
-                crossAxisSpacing: 16, // Horizontal space between items
-                mainAxisSpacing: 16, // Vertical space between items
-                childAspectRatio: 0.8, // Adjust the aspect ratio for better layout
+              padding: const EdgeInsets.all(15.0),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 18,
+                mainAxisSpacing: 18,
+                childAspectRatio: 0.85,
               ),
+
               itemCount: _displayedProducts.length,
               itemBuilder: (context, index) {
                 final product = _displayedProducts[index];
@@ -566,22 +567,24 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                       ),
                     );
                   },
-                  child: Card(
-                    elevation: 4,
+                  child:Card(
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(
+                        SizedBox(
+                          height: 100, // Set a fixed height for the image
+                          width: double.infinity, // Take up full width
                           child: ClipRRect(
                             borderRadius: BorderRadius.vertical(
                               top: Radius.circular(12),
                             ),
                             child: Image.asset(
                               product["image"],
-                              fit: BoxFit.cover,
+                              fit: BoxFit.cover, // Ensure the image covers the space
                             ),
                           ),
                         ),
@@ -597,10 +600,10 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                                   fontWeight: FontWeight.w600,
                                   color: Colors.grey.shade800,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2, // Limit to 2 lines
+                                overflow: TextOverflow.ellipsis, // Add ellipsis if text overflows
                               ),
-                              SizedBox(height: 4),
+                              SizedBox(height: 4), // Add spacing between texts
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -614,17 +617,14 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                                   ),
                                   IconButton(
                                     onPressed: () {
-                                      // Add to cart logic
                                       final newItem = CartItem(
-                                        id: Uuid().v4(), // Generate unique ID
+                                        id: Uuid().v4(),
                                         name: product["name"],
                                         price: product["price"],
                                         image: product["image"],
                                         quantity: 1,
                                       );
-
                                       context.read<CartProvider>().addToCart(newItem);
-
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
                                           content: Text("Added to cart"),
@@ -640,13 +640,12 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                                   ),
                                 ],
                               ),
-
                             ],
                           ),
                         ),
                       ],
                     ),
-                  ),
+                  )
                 );
               },
             ),

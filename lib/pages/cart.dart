@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:eclapp/pages/homepage.dart';
 import 'package:eclapp/pages/signinpage.dart';
+import 'auth_service.dart';
 import 'bottomnav.dart';
 import 'cartprovider.dart';
 
@@ -16,14 +17,14 @@ class Cart extends StatefulWidget {
 
 class _CartState extends State<Cart> {
   String deliveryOption = 'Delivery';
-  // double deliveryFee = 4.00;
+
   String? selectedRegion;
   String? selectedCity;
   String? selectedTown;
   double deliveryFee = 0.00;
 
   TextEditingController addressController = TextEditingController();
-  // String? selectedRegion, selectedCity, selectedStore;
+
 
   @override
   void initState() {
@@ -62,18 +63,6 @@ class _CartState extends State<Cart> {
 
 
 
-  Future<void> _checkLoginStatus() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-
-    if (!isLoggedIn && mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => SignInScreen()),
-      );
-    }
-  }
-
   void _handleDeliveryOptionChange(String option) {
     setState(() {
       deliveryOption = option;
@@ -88,8 +77,7 @@ class _CartState extends State<Cart> {
 
 
   void _handleCheckout(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    bool isLoggedIn = await AuthService.isLoggedIn();
 
     if (!isLoggedIn) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -101,11 +89,15 @@ class _CartState extends State<Cart> {
         MaterialPageRoute(builder: (context) => SignInScreen()),
       );
 
-      isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-    }
+      // **Recheck login status after returning**
+      if (result == true) {
+        isLoggedIn = await AuthService.isLoggedIn();
+      }
 
-    if (!isLoggedIn) {
-      return;
+      // **Exit if user is still not logged in**
+      if (!isLoggedIn) {
+        return;
+      }
     }
 
     if (context.read<CartProvider>().cartItems.isEmpty) {
@@ -115,13 +107,18 @@ class _CartState extends State<Cart> {
       return;
     }
 
-    // Proceed with checkout
+    // **Proceed with checkout**
     context.read<CartProvider>().purchaseItems();
-    context.read<CartProvider>().clearCart();
+
+    Future.delayed(Duration(milliseconds: 500), () {
+      context.read<CartProvider>().clearCart();
+    });
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Purchase successful!")),
     );
   }
+
 
 
 
@@ -288,7 +285,7 @@ class _CartState extends State<Cart> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('Delivery:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              const Text('Shipping:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
               _buildRadioButton('Delivery'),
               _buildRadioButton('Pickup'),
             ],
@@ -310,20 +307,18 @@ class _CartState extends State<Cart> {
             ),
           ],
 
-          const SizedBox(height: 5), // Reduced spacing
+          const SizedBox(height: 5),
 
-          // **Price Details**
           _buildPriceDetails(cart),
 
           const SizedBox(height: 10),
 
-          // **Checkout Button**
+
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
-                padding: const EdgeInsets.symmetric(vertical: 12), // Smaller button padding
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               onPressed: () => _handleCheckout(context),
