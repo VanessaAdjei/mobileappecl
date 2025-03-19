@@ -13,7 +13,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'auth_service.dart';
 import 'aboutus.dart';
 import 'bottomnav.dart';
 import 'cart.dart';
@@ -61,12 +60,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     String name = await secureStorage.read(key: 'userName') ?? "User";
     String email = await secureStorage.read(key: 'userEmail') ?? "No email available";
-    String phoneNumber = await secureStorage.read(key: 'phoneNumber') ?? "";
+
 
     print("Retrieved User Data:");
     print("Name: $name");
     print("Email: $email");
-    print("Phone: $phoneNumber");
+
 
     setState(() {
       _userName = name;

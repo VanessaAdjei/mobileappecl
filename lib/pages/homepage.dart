@@ -1,4 +1,3 @@
-import 'package:eclapp/pages/categories.dart';
 import 'package:eclapp/pages/storelocation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -11,7 +10,6 @@ import 'cart.dart';
 import 'cartprovider.dart';
 import 'clickableimage.dart';
 import 'itemdetail.dart';
-import 'profile.dart';
 import 'dart:async';
 
 class HomePage extends StatefulWidget {
@@ -271,9 +269,9 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildOrderMedicineCard() {
     List<String> imageUrls = [
-      'assets/images/banner1.png',
-      'assets/images/slider2.png',
-      'assets/images/slider3.png',
+      'assets/images/ban1.png',
+      'assets/images/ban2.png',
+      'assets/images/ban1.png',
     ];
 
     PageController _pageController = PageController();
@@ -288,7 +286,7 @@ class _HomePageState extends State<HomePage> {
 
     return Container(
       padding: EdgeInsets.all(8),
-      height: 200,
+      height: 150,
       // width: 150,
       child: PageView.builder(
         controller: _pageController,
@@ -304,6 +302,7 @@ class _HomePageState extends State<HomePage> {
         },
       ),
     );
+
   }
 
   Widget _buildProductCard(Map<String, String> product) {

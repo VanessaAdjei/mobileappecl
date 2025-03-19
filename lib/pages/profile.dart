@@ -40,6 +40,21 @@ class _ProfileState extends State<Profile> {
   void initState() {
     super.initState();
     _loadUserData();
+    _loadProfileImage();
+  }
+
+
+  Future<void> _loadProfileImage() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedImagePath = prefs.getString('profile_image_path');
+    if (savedImagePath != null && await File(savedImagePath).exists()) {
+      setState(() {
+        _profileImage = File(savedImagePath);
+        _profileImagePath = savedImagePath;
+      });
+    } else {
+      print("Image file not found or path is null!");
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -49,12 +64,10 @@ class _ProfileState extends State<Profile> {
 
     String name = await secureStorage.read(key: 'userName') ?? "User";
     String email = await secureStorage.read(key: 'userEmail') ?? "No email available";
-    String phoneNumber = await secureStorage.read(key: 'phoneNumber') ?? "";
 
     print("Retrieved User Data:");
     print("Name: $name");
     print("Email: $email");
-    print("Phone: $phoneNumber");
 
     setState(() {
       _userName = name;
@@ -62,34 +75,31 @@ class _ProfileState extends State<Profile> {
     });
   }
 
-
   Future<void> _pickImage() async {
     var status = await Permission.storage.request();
     if (status.isGranted) {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
         File savedImage = await _saveImageToLocalStorage(File(image.path));
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('profile_image_path', savedImage.path);
+
         setState(() {
           _profileImage = savedImage;
+          _profileImagePath = savedImage.path;
         });
       }
-    } else if (status.isDenied) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Permission denied. Please allow access from settings.")),
-      );
     } else if (status.isPermanentlyDenied) {
       openAppSettings();
     }
   }
+
   Future<File> _saveImageToLocalStorage(File imageFile) async {
     final directory = await getApplicationDocumentsDirectory();
     final savedImagePath = "${directory.path}/profile_image.png";
-
     final File savedImage = await imageFile.copy(savedImagePath);
-
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('profile_image_path', savedImagePath);
-
     return savedImage;
   }
 
@@ -194,17 +204,18 @@ class _ProfileState extends State<Profile> {
             children: [
               GestureDetector(
                 onTap: _pickImage,
-                child: CircleAvatar(
-                  radius: 30,
-                  backgroundImage: _profileImage != null
-                      ? FileImage(_profileImage!)
-                      : (_profileImagePath != null && File(_profileImagePath!).existsSync()
-                      ? FileImage(File(_profileImagePath!))
-                      : const AssetImage("assets/images/default_avatar.png") as ImageProvider),
-                  child: _profileImage == null && _profileImagePath == null
-                      ? Icon(Icons.person, size: 50, color: Colors.white)
-                      : null,
-                ),
+                  child: CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.grey[300],
+                    backgroundImage: _profileImage != null
+                        ? FileImage(_profileImage!)
+                        : (_profileImagePath != null && File(_profileImagePath!).existsSync()
+                        ? FileImage(File(_profileImagePath!))
+                        : const AssetImage("assets/images/default_avatar.png") as ImageProvider),
+                    child: _profileImage == null && _profileImagePath == null
+                        ? Icon(Icons.person, size: 50, color: Colors.white)
+                        : null,
+                  )
 
 
               ),

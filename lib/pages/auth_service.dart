@@ -69,10 +69,11 @@ class AuthService {
   }
 
 
-
   // OTP
   static Future<bool> verifyOTP(String email, String otp) async {
     final url = Uri.parse('https://eclcommerce.ernestchemists.com.gh/api/otp-verification');
+
+
 
     try {
       final response = await http.post(
@@ -83,6 +84,8 @@ class AuthService {
 
       if (response.statusCode == 200) {
         print("OTP Verified Successfully!");
+        print("API Raw Response: ${response.body}");
+
         return true;
       } else {
         print("OTP Verification Failed: ${response.body}");

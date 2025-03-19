@@ -100,7 +100,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     String name = await secureStorage.read(key: 'userName') ?? "User";
     String email = await secureStorage.read(key: 'userEmail') ?? "No email available";
-    String phoneNumber = await secureStorage.read(key: 'phoneNumber') ?? "";
+    String phoneNumber = await secureStorage.read(key: 'userPhone') ?? "";
+
 
     print("Retrieved User Data:");
     print("Name: $name");
@@ -185,7 +186,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildEditableField(String label, TextEditingController controller, bool isEditing) {
-    bool isEditable = label == "Full Name"; // Only Full Name should be editable
+    bool isEditable = label == "Full Name";
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,7 +198,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 5),
         TextField(
           controller: controller,
-          readOnly: !isEditable, // Non-editable for Email & Phone Number
+          readOnly: !isEditable,
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.grey[200],
@@ -219,7 +220,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 });
               },
             )
-                : null, // Remove edit button for non-editable fields
+                : null,
           ),
           style: const TextStyle(fontSize: 16),
         ),
