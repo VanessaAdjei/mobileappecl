@@ -187,7 +187,6 @@ class _HomePageState extends State<HomePage> {
 
     overlay.insert(overlayEntry);
 
-    // Remove after 2 seconds
     Future.delayed(const Duration(seconds: 2), () {
       overlayEntry.remove();
     });
@@ -202,11 +201,17 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildPopularProducts() {
     List<Map<String, String>> popularProducts = [
-      {'name': 'Product', 'image': 'assets/images/popular4.png'},
-      {'name': 'Product', 'image': 'assets/images/popular2.png'},
-      {'name': 'Product', 'image': 'assets/images/popular3.png'},
-      {'name': 'Product', 'image': 'assets/images/popular4.png'},
-      {'name': 'Product', 'image': 'assets/images/popular2.png'},
+
+      {'name': 'Product', 'image': 'assets/images/prod2.png'},
+      {'name': 'Product', 'image': 'assets/images/prod3.png'},
+      {'name': 'Product', 'image': 'assets/images/prod4.png'},
+      {'name': 'Product', 'image': 'assets/images/prod2.png'},
+      {'name': 'Product', 'image': 'assets/images/prod5.png'},
+      {'name': 'Product', 'image': 'assets/images/prod4.png'},
+      {'name': 'Product', 'image': 'assets/images/prod2.png'},
+      {'name': 'Product', 'image': 'assets/images/prod5.png'},
+      {'name': 'Product', 'image': 'assets/images/prod4.png'},
+
 
     ];
 
@@ -285,7 +290,7 @@ class _HomePageState extends State<HomePage> {
     });
 
     return Container(
-      padding: EdgeInsets.all(8),
+      padding: EdgeInsets.only(top: 10, bottom: 20, left: 2, right : 2),
       height: 150,
       // width: 150,
       child: PageView.builder(
@@ -351,7 +356,7 @@ class _HomePageState extends State<HomePage> {
                 Text(
                   product['price']!,
                   style: const TextStyle(
-                    fontSize: 12, // Reduce font size
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: Colors.black54,
                   ),
@@ -384,29 +389,29 @@ class _HomePageState extends State<HomePage> {
   }
 
 
-  Widget _buildContactRow(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: Wrap(
-        spacing: 16, // Reduce spacing here
-        alignment: WrapAlignment.center,
-        children: [
-          _buildContactItem(
-            context,
-            icon: Icon(Icons.location_on),
-            label: 'Store Locations',
-            phoneNumber: '',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => StoreSelectionPage()),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildContactRow(BuildContext context) {
+  //   return Padding(
+  //     padding: const EdgeInsets.all(8),
+  //     child: Wrap(
+  //       spacing: 16, // Reduce spacing here
+  //       alignment: WrapAlignment.center,
+  //       children: [
+  //         _buildContactItem(
+  //           context,
+  //           icon: Icon(Icons.location_on),
+  //           label: 'Store Locations',
+  //           phoneNumber: '',
+  //           onTap: () {
+  //             Navigator.push(
+  //               context,
+  //               MaterialPageRoute(builder: (context) => StoreSelectionPage()),
+  //             );
+  //           },
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildContactItem(
       BuildContext context, {
@@ -488,7 +493,7 @@ class _HomePageState extends State<HomePage> {
                             hintStyle: TextStyle(color: Colors.black.withOpacity(0.6)),
                             prefixIcon: Icon(Icons.search, color: Colors.black),
                             filled: true,
-                            fillColor: Colors.white,
+                            fillColor: Colors.white30,
                             contentPadding: EdgeInsets.symmetric(vertical: 0),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(30),
@@ -501,7 +506,7 @@ class _HomePageState extends State<HomePage> {
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.only(top: 50),
+                            padding: const EdgeInsets.only(top: 60),
                             child: SizedBox(
                               height: 110,
                               width: 100,
@@ -518,11 +523,10 @@ class _HomePageState extends State<HomePage> {
                 ),
                 actions: [
                   Container(
-                    margin: EdgeInsets.only(right: 0.0),
+                    margin: EdgeInsets.only(right: 20.0),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.green[700],
-
                     ),
                     child: IconButton(
                       icon: Icon(Icons.shopping_cart, color: Colors.white),
@@ -580,7 +584,7 @@ class _HomePageState extends State<HomePage> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 1.0),
-                  child: ClickableImageRow(),
+                  child: ClickableImageButton(),
                 ),
               ),
               SliverGrid(

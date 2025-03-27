@@ -111,33 +111,38 @@ class _CategoryPageState extends State<CategoryPage> {
 
   TextEditingController _searchController = TextEditingController();
   List<String> _filteredCategories = categories.keys.toList();
-
   void _searchProduct(String query) {
     if (query.isEmpty) {
       setState(() {
-        _filteredCategories = categories.keys.toList(); // Reset to all categories
+        _filteredCategories = categories.keys.toList();
       });
       return;
     }
 
-    Set<String> matchedCategories = {}; // Store unique categories that contain the product
+    if (query.length >= 3) {
+      Set<String> matchedCategories = {};
 
-    products.forEach((subcategory, productList) {
-      for (var product in productList) {
-        if (product['name'].toLowerCase().contains(query.toLowerCase())) {
-          // Find which category the subcategory belongs to
-          categories.forEach((category, subcategories) {
-            if (subcategories.contains(subcategory)) {
-              matchedCategories.add(category);
-            }
-          });
+      products.forEach((subcategory, productList) {
+        for (var product in productList) {
+          if (product['name'].toLowerCase().contains(query.toLowerCase())) {
+            categories.forEach((category, subcategories) {
+              if (subcategories.contains(subcategory)) {
+                matchedCategories.add(category);
+              }
+            });
+          }
         }
-      }
-    });
+      });
 
-    setState(() {
-      _filteredCategories = matchedCategories.toList(); // Update UI with only matched categories
-    });
+      setState(() {
+        _filteredCategories = matchedCategories.toList();
+      });
+    } else {
+
+      setState(() {
+        _filteredCategories = [];
+      });
+    }
   }
 
   @override
@@ -351,12 +356,12 @@ class SubcategoryPage extends StatefulWidget {
 
 class _SubcategoryPageState extends State<SubcategoryPage> {
   String? _selectedSubcategory;
-  List<Map<String, dynamic>> _displayedProducts = []; // Correct type
+  List<Map<String, dynamic>> _displayedProducts = [];
 
   @override
   void initState() {
     super.initState();
-    // Display all products under the selected category by default
+
     _displayAllProducts();
   }
 
@@ -466,7 +471,7 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
       ),
       body: Column(
         children: [
-          Container(
+          SizedBox(
             height: 60,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
@@ -537,7 +542,7 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                 "No products available",
                 style: TextStyle(
                   fontSize: 18,
-                  color: Colors.grey.shade600,
+                  color: Colors.white,
                 ),
               ),
             )
@@ -545,9 +550,9 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
               padding: const EdgeInsets.all(15.0),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                crossAxisSpacing: 18,
-                mainAxisSpacing: 18,
-                childAspectRatio: 0.85,
+                crossAxisSpacing: 4,
+                mainAxisSpacing: 0,
+                childAspectRatio: 0.93,
               ),
 
               itemCount: _displayedProducts.length,
@@ -569,6 +574,7 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                   },
                   child:Card(
                     elevation: 0,
+                    color: Colors.transparent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -576,20 +582,20 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         SizedBox(
-                          height: 100, // Set a fixed height for the image
-                          width: double.infinity, // Take up full width
+                          height: 100,
+                          width: double.infinity,
                           child: ClipRRect(
                             borderRadius: BorderRadius.vertical(
                               top: Radius.circular(12),
                             ),
                             child: Image.asset(
                               product["image"],
-                              fit: BoxFit.cover, // Ensure the image covers the space
+                              fit: BoxFit.cover,
                             ),
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(10.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -600,10 +606,10 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                                   fontWeight: FontWeight.w600,
                                   color: Colors.grey.shade800,
                                 ),
-                                maxLines: 2, // Limit to 2 lines
-                                overflow: TextOverflow.ellipsis, // Add ellipsis if text overflows
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              SizedBox(height: 4), // Add spacing between texts
+
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
