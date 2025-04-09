@@ -63,15 +63,26 @@ class ClickableImageButton extends StatelessWidget {
               ),
             ),
             child: Center(
-              child: Text(
-                'SUBMIT YOUR PRESCRIPTION',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.receipt,
+                    color: Colors.white,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'SUBMIT YOUR PRESCRIPTION',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
               ),
+
             ),
           ),
         ),

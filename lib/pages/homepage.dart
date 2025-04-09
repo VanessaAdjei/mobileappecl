@@ -1,10 +1,12 @@
-import 'package:eclapp/pages/storelocation.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 import 'CartItem.dart';
+import 'ProductModel.dart';
 import 'bottomnav.dart';
 import 'cart.dart';
 import 'cartprovider.dart';
@@ -18,30 +20,79 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Map<String, String>> products = [
-    {'name': 'Product 1', 'price': '100 GHS', 'image': 'assets/images/product1.png'},
-    {'name': 'Product 2', 'price': '200 GHS', 'image': 'assets/images/product2.png'},
-    {'name': 'Product 3', 'price': '150 GHS', 'image': 'assets/images/product3.png'},
-    {'name': 'Product 4', 'price': '250 GHS', 'image': 'assets/images/product4.png'},
-    {'name': 'Product 5', 'price': '100 GHS', 'image': 'assets/images/product1.png'},
-    {'name': 'Product 6', 'price': '200 GHS', 'image': 'assets/images/product1.png'},
-    {'name': 'Product 7', 'price': '150 GHS', 'image': 'assets/images/product2.png'},
-    {'name': 'Product 8', 'price': '250 GHS', 'image': 'assets/images/product3.png'},
-    {'name': 'Product 9', 'price': '100 GHS', 'image': 'assets/images/product4.png'},
-    {'name': 'Product 10', 'price': '200 GHS', 'image': 'assets/images/product4.png'},
-    {'name': 'Product 11', 'price': '150 GHS', 'image': 'assets/images/product4.png'},
-    {'name': 'Product 12', 'price': '250 GHS', 'image': 'assets/images/product2.png'},
-    {'name': 'Product 13', 'price': '100 GHS', 'image': 'assets/images/product1.png'},
-    {'name': 'Product 14', 'price': '200 GHS', 'image': 'assets/images/product4.png'},
-    {'name': 'Product 15', 'price': '150 GHS', 'image': 'assets/images/product1.png'},
-    {'name': 'Product 16', 'price': '250 GHS', 'image': 'assets/images/product1.png'},
-    {'name': 'Product 17', 'price': '100 GHS', 'image': 'assets/images/product1.png'},
-    {'name': 'Product 18', 'price': '200 GHS', 'image': 'assets/images/product2.png'},
-    {'name': 'Product 19', 'price': '150 GHS', 'image': 'assets/images/product4.png'},
-    {'name': 'Product 20', 'price': '250 GHS', 'image': 'assets/images/product3.png'},
-  ];
+  List<Product> products = [];
+  List<Product> filteredProducts = [];
 
-  List<Map<String, String>> filteredProducts = [];
+
+  Future<void> fetchProducts() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://eclcommerce.ernestchemists.com.gh/api/get-all-products'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final List<dynamic> dataList = responseData['data'];
+
+        setState(() {
+          products = dataList.map((item) {
+            // Use the price from the outer object (100) rather than from product
+            final productData = item['product'] as Map<String, dynamic>;
+            return Product(
+              id: productData['id'] ?? 0,
+              name: productData['name'] ?? 'No name',
+              description: productData['description'] ?? '',
+              urlName: productData['url_name'] ?? '',
+              status: productData['status'] ?? '',
+              price: (item['price'] ?? 0).toString(), // Using the outer price
+              thumbnail: productData['thumbnail'] ?? '',
+              quantity:  productData['quantity'] ?? '',
+            );
+          }).toList();
+
+          filteredProducts = List.from(products);
+        });
+      } else {
+        throw Exception('Failed to load: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching products: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load products: $e')),
+      );
+    }
+  }
+
+
+  Future<Product> fetchProductDetails(String urlName) async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://eclcommerce.ernestchemists.com.gh/api/product-details/$urlName'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final productData = data['product'];
+
+        return Product(
+          id: productData['id'] ?? 0,
+          name: productData['name'] ?? 'No name',
+          description: productData['description'] ?? '',
+          urlName: productData['url_name'] ?? '',
+          status: productData['status'] ?? '',
+          price: (productData['price'] ?? 0).toDouble(),
+          thumbnail: productData['thumbnail'] ?? '',
+          quantity: productData['qty_in_stock'] ?? 0,
+        );
+      } else {
+        throw Exception('Failed to load product details');
+      }
+    } catch (e) {
+      print('Error fetching product details: $e');
+      throw Exception('Could not load product');
+    }
+  }
+
   TextEditingController searchController = TextEditingController();
 
   ScrollController _scrollController = ScrollController();
@@ -134,17 +185,26 @@ class _HomePageState extends State<HomePage> {
 
 
   void _filterProducts(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        filteredProducts = List.from(products);
+      });
+      return;
+    }
+
     setState(() {
       filteredProducts = products
-          .where((product) => product['name']!.toLowerCase().contains(query.toLowerCase()))
+          .where((product) => product.name.toLowerCase().contains(query.toLowerCase()))
           .toList();
     });
   }
 
+
+
   @override
   void initState() {
     super.initState();
-    filteredProducts = products;
+    fetchProducts();
     searchController.addListener(() {
       _filterProducts(searchController.text);
     });
@@ -160,6 +220,7 @@ class _HomePageState extends State<HomePage> {
       }
     });
   }
+
   void showTopSnackBar(BuildContext context, String message) {
     final overlay = Overlay.of(context);
     final overlayEntry = OverlayEntry(
@@ -310,108 +371,135 @@ class _HomePageState extends State<HomePage> {
 
   }
 
-  Widget _buildProductCard(Map<String, String> product) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ItemPage(
-              name: product['name']!,
-              price: product['price']!,
-              image: product['image']!,
-              categoryName: 'All Categories',
+  Widget _buildProductCard(Product product) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Adjusted dimensions for larger image
+    double cardWidth = screenWidth * 0.45; // Slightly narrower to allow more space
+    double cardHeight = screenHeight * 0.38; // Taller card for bigger image
+
+    return Container(
+      width: cardWidth,
+      height: cardHeight,
+      margin: EdgeInsets.all(screenWidth * 0.015),
+      decoration: BoxDecoration(
+        color: Colors.white,
+
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ItemPage(urlName: product.urlName),
             ),
-          ),
-        );
-      },
-      child: SizedBox(
-        width: 180,
-        height: 240,
+          );
+        },
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Image.asset(
-              product['image']!,
-              height: 90,
-              width: 300,
-              fit: BoxFit.cover,
-            ),
-            Flexible(
-              child: Text(
-                product['name']!,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green[800],
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  product['price']!,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black54,
+            Container(
+              height: cardHeight * 0.2,
+              padding: EdgeInsets.all(1),
+              child: ClipRRect(
+                child: Image.network(
+                  product.thumbnail,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                            : null,
+                      ),
+                    );
+                  },
+                  errorBuilder: (_, __, ___) => Container(
+                    color: Colors.grey[200],
+                    child: Center(
+                      child: Icon(Icons.broken_image, size: 40),
+                    ),
                   ),
                 ),
-                IconButton(
-                  onPressed: () {
-                    String cleanedPrice = product['price']!.replaceAll(RegExp(r'[^0-9.]'), '');
-                    double parsedPrice = double.parse(cleanedPrice);
+              ),
+            ),
 
-                    final newItem = CartItem(
-                      id: const Uuid().v4(),
-                      name: product['name']!,
-                      price: parsedPrice,
-                      image: product['image']!,
-                      quantity: 1,
-                    );
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 3.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Product name
+                    Text(
+                      product.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14, // Slightly larger
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green[800],
+                      ),
+                    ),
 
-                    context.read<CartProvider>().addToCart(newItem);
-                    showTopSnackBar(context, 'Added to cart');
-                  },
-                  icon: Icon(Icons.add_shopping_cart, color: Colors.green, size: 18.0),
+                    // Price and add to cart button
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '${product.price} GHS',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: screenWidth * 0.038, // Slightly larger
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: BoxConstraints(),
+                          iconSize: screenWidth * 0.08, // Larger icon
+                          icon: Icon(Icons.add_shopping_cart),
+                          color: Colors.green,
+                          onPressed: () {
+                            final parsedPrice = double.tryParse(
+                                product.price.toString()) ??
+                                0.0;
+                            context.read<CartProvider>().addToCart(
+                              CartItem(
+                                id: product.id.toString(),
+                                name: product.name,
+                                price: parsedPrice,
+                                image: product.thumbnail,
+                                quantity: 1,
+                              ),
+                            );
+                            showTopSnackBar(context, 'Added to cart');
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ],
         ),
       ),
-
     );
   }
 
 
-  // Widget _buildContactRow(BuildContext context) {
-  //   return Padding(
-  //     padding: const EdgeInsets.all(8),
-  //     child: Wrap(
-  //       spacing: 16, // Reduce spacing here
-  //       alignment: WrapAlignment.center,
-  //       children: [
-  //         _buildContactItem(
-  //           context,
-  //           icon: Icon(Icons.location_on),
-  //           label: 'Store Locations',
-  //           phoneNumber: '',
-  //           onTap: () {
-  //             Navigator.push(
-  //               context,
-  //               MaterialPageRoute(builder: (context) => StoreSelectionPage()),
-  //             );
-  //           },
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
+
+
+
 
   Widget _buildContactItem(
       BuildContext context, {

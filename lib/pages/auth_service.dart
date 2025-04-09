@@ -1,5 +1,8 @@
+import 'dart:async';
+
+import 'package:eclapp/pages/product_model.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
@@ -25,18 +28,44 @@ class AuthService {
     return sha256.convert(utf8.encode(password)).toString();
   }
 
-  // static Future<void> clearAllUsers() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   await prefs.remove(usersKey);
-  //   await prefs.remove(loggedInUserKey);
-  //   await prefs.remove(isLoggedInKey);
-  //   await prefs.remove(userNameKey);
-  //   await prefs.remove(userEmailKey);
-  //   await prefs.remove(userPhoneNumberKey);
-  // }
 
 
 
+  Future<List<ProductVariant>> getAllProducts() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://eclcommerce.ernestchemists.com.gh/api/get-all-products'),
+      ).timeout(Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data['success'] == true) {
+          List<dynamic> productList = data['data'];
+          List<ProductVariant> products = productList.map((productData) {
+            return ProductVariant.fromJson(productData);
+          }).toList();
+
+          print('Products fetched successfully');
+          return products;
+        } else {
+          print('Error: ${data['message']}');
+          return [];
+        }
+      } else {
+        print('Failed to load products: ${response.statusCode}');
+        return [];  // Return an empty list if the HTTP request fails
+      }
+    } on TimeoutException catch (e) {
+      print('Request timeout: $e');
+      return [];  // Return an empty list if the request times out
+    } on http.ClientException catch (e) {
+      print('HTTP Client Error: $e');
+      return [];  // Handle client errors
+    } catch (e) {
+      print('An unexpected error occurred: $e');
+      return [];  // Return an empty list if any other error occurs
+    }}
 
 
 
@@ -97,80 +126,90 @@ class AuthService {
     }
   }
 
-
-  // Sign in a  user
-  static Future<bool> signIn(String email, String password) async {
-    final url = Uri.parse('$baseUrl/login');
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email.trim().toLowerCase(),
-          'password': password,
-        }),
-      );
-
-      print("API Response Status: ${response.statusCode}");
-
-      if (response.statusCode != 200) {
-        print("Login Failed: ${response.body}");
-        return false;
-      }
-
-      // Decode response safely
-      Map<String, dynamic> responseData;
-      try {
-        responseData = jsonDecode(response.body);
-      } catch (e) {
-        print("Error decoding JSON response: $e");
-        return false;
-      }
-
-      // Validate access token
-      if (!responseData.containsKey('access_token')) {
-        print("Login Failed: No access token found");
-        return false;
-      }
-
-      String authToken = responseData['access_token'];
-      Map<String, dynamic>? user = responseData['user'];
-
-      if (user == null) {
-        print("Login Failed: User data missing");
-        return false;
-      }
-
-      String userName = user['name']?.toString() ?? "User";
-      String userEmail = user['email'] ?? "No email available";
-      String userPhone = user['phone'] ?? "No phone available";
-
-      // Securely store authentication token
-      try {
-        await secureStorage.write(key: authTokenKey, value: authToken);
-      } catch (e) {
-        print("Error storing auth token: $e");
-        return false;
-      }
-
-      // Store user details
-      await saveUserDetails(userName, userEmail, userPhone);
-
-      // Debug: Confirm stored data
-      print("✅ Sign-In Successful!");
-      print("👤 Name: $userName");
-      print("📧 Email: $userEmail");
-
-      return true;
-    } catch (e) {
-      print("AuthService Error during sign-in: $e");
-      return false;
-    }
+  static Future<String?> getBearerToken() async {
+    final token = await secureStorage.read(key: authTokenKey);
+    return token != null ? 'Bearer $token' : null;
   }
 
 
-  static Future<void> saveUserDetails(String name, String email, String phone) async {
+  // Sign in a  user
+  static Future<Map<String, dynamic>> signIn(String email, String password) async {
+    try {
+      debugPrint("Attempting login with email: $email");
+
+
+      var response = await _attemptLogin(email, password);
+
+
+      if (response.statusCode != 200) {
+        debugPrint("Trying with hashed password...");
+        response = await _attemptLogin(email, hashPassword(password));
+      }
+
+      final responseData = jsonDecode(response.body);
+      debugPrint("API Response: ${response.statusCode} - $responseData");
+
+      if (response.statusCode == 200) {
+        final token = responseData['access_token'] as String?;
+        if (token == null) {
+          return {'success': false, 'message': 'No access token received'};
+        }
+
+        await secureStorage.write(key: authTokenKey, value: token);
+        final user = responseData['user'] as Map<String, dynamic>;
+        await _storeUserData(user);
+
+        return {
+          'success': true,
+          'token': 'Bearer $token',
+          'user': user,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ??
+              'Login failed (Status: ${response.statusCode})'
+        };
+      }
+    } catch (e) {
+      debugPrint('Login error: $e');
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}'
+      };
+    }
+  }
+
+  static Future<http.Response> _attemptLogin(String email, String password) async {
+    return await http.post(
+      Uri.parse('$baseUrl/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
+    );
+  }
+
+  static Future<void> _storeUserData(Map<String, dynamic> user) async {
+    await secureStorage.write(key: 'user_id', value: user['id'].toString());
+    await secureStorage.write(key: 'user_name', value: user['name']);
+    await secureStorage.write(key: 'user_email', value: user['email']);
+    if (user['phone'] != null) {
+      await secureStorage.write(key: 'user_phone', value: user['phone']);
+    }
+  }
+
+  // Add this method to your existing AuthService
+  static Future<Map<String, String>> getAuthHeaders() async {
+    final token = await getBearerToken();
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': token ?? '',
+    };
+  }
+
+
+
+   Future<void> saveUserDetails(String name, String email, String phone) async {
     await secureStorage.write(key: 'userName', value: name);
     await secureStorage.write(key: 'userEmail', value: email);
     await secureStorage.write(key: 'userPhone', value: phone);
@@ -179,7 +218,7 @@ class AuthService {
 
 
 
-  static Future<String?> getUserName() async {
+   Future<String?> getUserName() async {
     try {
       String? userName = await secureStorage.read(key: userNameKey);
       print("Retrieved User Name: $userName");
@@ -196,7 +235,7 @@ class AuthService {
 
 
 
-  static Future<void> saveProfileImage(String imagePath) async {
+   Future<void> saveProfileImage(String imagePath) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('profile_image', imagePath);
   }

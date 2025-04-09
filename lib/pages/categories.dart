@@ -9,6 +9,7 @@ import 'bottomnav.dart';
 import 'cartprovider.dart';
 import 'homepage.dart';
 import 'itemdetail.dart';
+import 'product_model.dart';
 
 const Map<String, List<String>> categories = {
   "MEDICINES": ["Pain Relief", "Cold & Flu", "Vitamins"],
@@ -358,6 +359,13 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
   String? _selectedSubcategory;
   List<Map<String, dynamic>> _displayedProducts = [];
 
+
+  String getProductImageUrl(String imagePath) {
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    return 'https://eclcommerce.ernestchemists.com.gh/storage/$imagePath';
+  }
   @override
   void initState() {
     super.initState();
@@ -559,20 +567,15 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
               itemBuilder: (context, index) {
                 final product = _displayedProducts[index];
                 return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ItemPage(
-                          name: product["name"],
-                          price: product["price"].toString(),
-                          image: product["image"],
-                          categoryName: widget.categoryName,
-                        ),
-                      ),
-                    );
-                  },
-                  child:Card(
+                  // onTap: () {
+                  //   Navigator.push(
+                  //     context,
+                  //       MaterialPageRoute(
+                  //         ),
+                  //       )
+                  //   );
+                  // },
+                  child: Card(
                     elevation: 0,
                     color: Colors.transparent,
                     shape: RoundedRectangleBorder(
@@ -589,7 +592,7 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                               top: Radius.circular(12),
                             ),
                             child: Image.asset(
-                              product["image"],
+                              product['image'], // Access image correctly
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -600,7 +603,7 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                product["name"],
+                                product['name'],  // Access name correctly
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -609,12 +612,11 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
-
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    "GHS ${product["price"]}",
+                                    "GHS ${product['price']}", // Access price correctly
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: Colors.green.shade700,
@@ -625,9 +627,9 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                                     onPressed: () {
                                       final newItem = CartItem(
                                         id: Uuid().v4(),
-                                        name: product["name"],
-                                        price: product["price"],
-                                        image: product["image"],
+                                        name: product['name'], // Access name correctly
+                                        price: product['price'], // Access price correctly
+                                        image: product['image'], // Access image correctly
                                         quantity: 1,
                                       );
                                       context.read<CartProvider>().addToCart(newItem);
@@ -651,8 +653,9 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                         ),
                       ],
                     ),
-                  )
+                  ),
                 );
+
               },
             ),
           ),

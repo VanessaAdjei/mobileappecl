@@ -192,11 +192,21 @@ class _CartState extends State<Cart> {
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
-                                  child: Image.asset(
-                                    item.image,
-                                    width: 60,
-                                    height: 60,
-                                    fit: BoxFit.cover,
+                                  child: // Replace the Image.asset with this in your cart item builder:
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      item.image.startsWith('http') ? item.image : 'https://eclcommerce.ernestchemists.com.gh/storage/${item.image}',
+                                      width: 60,
+                                      height: 60,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) => Container(
+                                        width: 60,
+                                        height: 60,
+                                        color: Colors.grey[200],
+                                        child: Icon(Icons.medical_services, color: Colors.grey),
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 16.0),

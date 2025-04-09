@@ -18,10 +18,26 @@ class _PrescriptionUploadPageState extends State<PrescriptionUploadPage> {
     try {
       final List<XFile>? pickedFiles = await _picker.pickMultiImage();
       if (pickedFiles != null && pickedFiles.isNotEmpty) {
-        setState(() {
-          _selectedImages.addAll(pickedFiles.map((file) => File(file.path)));
-        });
-        _showConfirmationSnackbar("Prescriptions uploaded successfully!");
+        List<File> validFiles = [];
+
+        for (var file in pickedFiles) {
+          final File imageFile = File(file.path);
+          final int fileSize = imageFile.lengthSync();
+          if (fileSize <= 10 * 1024 * 1024) {
+            validFiles.add(imageFile);
+          } else {
+            _showConfirmationSnackbar("One or more files exceed 10MB and were not added.");
+          }
+        }
+
+        if (validFiles.isNotEmpty) {
+          setState(() {
+            _selectedImages.addAll(validFiles);
+          });
+          _showConfirmationSnackbar("Prescriptions uploaded successfully!");
+        } else {
+          _showConfirmationSnackbar("No valid image selected (all exceeded 10MB).");
+        }
       } else {
         _showConfirmationSnackbar("No image selected.");
       }
