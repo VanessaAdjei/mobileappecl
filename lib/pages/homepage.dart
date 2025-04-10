@@ -4,9 +4,9 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:uuid/uuid.dart';
 import 'CartItem.dart';
 import 'ProductModel.dart';
+import 'auth_service.dart';
 import 'bottomnav.dart';
 import 'cart.dart';
 import 'cartprovider.dart';
@@ -24,74 +24,7 @@ class _HomePageState extends State<HomePage> {
   List<Product> filteredProducts = [];
 
 
-  Future<void> fetchProducts() async {
-    try {
-      final response = await http.get(
-        Uri.parse('https://eclcommerce.ernestchemists.com.gh/api/get-all-products'),
-      );
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = json.decode(response.body);
-        final List<dynamic> dataList = responseData['data'];
-
-        setState(() {
-          products = dataList.map((item) {
-            // Use the price from the outer object (100) rather than from product
-            final productData = item['product'] as Map<String, dynamic>;
-            return Product(
-              id: productData['id'] ?? 0,
-              name: productData['name'] ?? 'No name',
-              description: productData['description'] ?? '',
-              urlName: productData['url_name'] ?? '',
-              status: productData['status'] ?? '',
-              price: (item['price'] ?? 0).toString(), // Using the outer price
-              thumbnail: productData['thumbnail'] ?? '',
-              quantity:  productData['quantity'] ?? '',
-            );
-          }).toList();
-
-          filteredProducts = List.from(products);
-        });
-      } else {
-        throw Exception('Failed to load: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error fetching products: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load products: $e')),
-      );
-    }
-  }
-
-
-  Future<Product> fetchProductDetails(String urlName) async {
-    try {
-      final response = await http.get(
-        Uri.parse('https://eclcommerce.ernestchemists.com.gh/api/product-details/$urlName'),
-      );
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        final productData = data['product'];
-
-        return Product(
-          id: productData['id'] ?? 0,
-          name: productData['name'] ?? 'No name',
-          description: productData['description'] ?? '',
-          urlName: productData['url_name'] ?? '',
-          status: productData['status'] ?? '',
-          price: (productData['price'] ?? 0).toDouble(),
-          thumbnail: productData['thumbnail'] ?? '',
-          quantity: productData['qty_in_stock'] ?? 0,
-        );
-      } else {
-        throw Exception('Failed to load product details');
-      }
-    } catch (e) {
-      print('Error fetching product details: $e');
-      throw Exception('Could not load product');
-    }
-  }
 
   TextEditingController searchController = TextEditingController();
 
@@ -133,6 +66,21 @@ class _HomePageState extends State<HomePage> {
       print("WhatsApp is not installed or cannot be launched.");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Could not open WhatsApp. Please ensure it is installed.')),
+      );
+    }
+  }
+
+
+  void loadProducts() async {
+    try {
+      List<Product> loadedProducts = await AuthService().fetchProducts();
+      setState(() {
+        products = loadedProducts;
+        filteredProducts = loadedProducts;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load products: $e')),
       );
     }
   }
@@ -204,7 +152,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    fetchProducts();
+    loadProducts();
     searchController.addListener(() {
       _filterProducts(searchController.text);
     });
@@ -441,7 +389,7 @@ class _HomePageState extends State<HomePage> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 14, // Slightly larger
+                        fontSize: 13,
                         fontWeight: FontWeight.bold,
                         color: Colors.green[800],
                       ),
@@ -456,7 +404,7 @@ class _HomePageState extends State<HomePage> {
                             '${product.price} GHS',
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: screenWidth * 0.038, // Slightly larger
+                              fontSize: screenWidth * 0.03,
                               fontWeight: FontWeight.w600,
                               color: Colors.black87,
                             ),
@@ -465,7 +413,7 @@ class _HomePageState extends State<HomePage> {
                         IconButton(
                           padding: EdgeInsets.zero,
                           constraints: BoxConstraints(),
-                          iconSize: screenWidth * 0.08, // Larger icon
+                          iconSize: screenWidth * 0.05, // Larger icon
                           icon: Icon(Icons.add_shopping_cart),
                           color: Colors.green,
                           onPressed: () {

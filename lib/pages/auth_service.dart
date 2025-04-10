@@ -1,12 +1,14 @@
 import 'dart:async';
 
-import 'package:eclapp/pages/product_model.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
+
+import 'ProductModel.dart';
 
 class AuthService {
   static const String baseUrl = "https://eclcommerce.ernestchemists.com.gh/api";
@@ -22,51 +24,79 @@ class AuthService {
     iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
   );
 
-
+  List<Product> products = [];
+  List<Product> filteredProducts = [];
 
   static String hashPassword(String password) {
     return sha256.convert(utf8.encode(password)).toString();
   }
 
 
-
-
-  Future<List<ProductVariant>> getAllProducts() async {
+  Future<List<Product>> fetchProducts() async {
     try {
       final response = await http.get(
         Uri.parse('https://eclcommerce.ernestchemists.com.gh/api/get-all-products'),
-      ).timeout(Duration(seconds: 10));
+      );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final List<dynamic> dataList = responseData['data'];
 
-        if (data['success'] == true) {
-          List<dynamic> productList = data['data'];
-          List<ProductVariant> products = productList.map((productData) {
-            return ProductVariant.fromJson(productData);
-          }).toList();
+        final products = dataList.map<Product>((item) {
+          final productData = item['product'] as Map<String, dynamic>;
+          return Product(
+            id: productData['id'] ?? 0,
+            name: productData['name'] ?? 'No name',
+            description: productData['description'] ?? '',
+            urlName: productData['url_name'] ?? '',
+            status: productData['status'] ?? '',
+            price: (item['price'] ?? 0).toString(),
+            thumbnail: productData['thumbnail'] ?? '',
+            quantity: productData['quantity'] ?? '',
+            category: productData['category'] ?? '',
+          );
+        }).toList();
 
-          print('Products fetched successfully');
-          return products;
-        } else {
-          print('Error: ${data['message']}');
-          return [];
-        }
+        return products;
       } else {
-        print('Failed to load products: ${response.statusCode}');
-        return [];  // Return an empty list if the HTTP request fails
+        throw Exception('Failed to load: ${response.statusCode}');
       }
-    } on TimeoutException catch (e) {
-      print('Request timeout: $e');
-      return [];  // Return an empty list if the request times out
-    } on http.ClientException catch (e) {
-      print('HTTP Client Error: $e');
-      return [];  // Handle client errors
     } catch (e) {
-      print('An unexpected error occurred: $e');
-      return [];  // Return an empty list if any other error occurs
-    }}
+      print('Error fetching products: $e');
+      rethrow;
+    }
+  }
 
+
+  static Future<Product> fetchProductDetails(String urlName) async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://eclcommerce.ernestchemists.com.gh/api/product-details/$urlName'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final productData = data['product'];
+
+        return Product(
+          id: productData['id'] ?? 0,
+          name: productData['name'] ?? 'No name',
+          description: productData['description'] ?? '',
+          urlName: productData['url_name'] ?? '',
+          status: productData['status'] ?? '',
+          category: productData['category'] ?? '',
+          price: (productData['price'] ?? 0).toDouble(),
+          thumbnail: productData['thumbnail'] ?? '',
+          quantity: productData['qty_in_stock'] ?? 0,
+        );
+      } else {
+        throw Exception('Failed to load product details');
+      }
+    } catch (e) {
+      print('Error fetching product details: $e');
+      throw Exception('Could not load product');
+    }
+  }
 
 
   // Sign up  user

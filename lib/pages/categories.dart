@@ -9,7 +9,7 @@ import 'bottomnav.dart';
 import 'cartprovider.dart';
 import 'homepage.dart';
 import 'itemdetail.dart';
-import 'product_model.dart';
+
 
 const Map<String, List<String>> categories = {
   "MEDICINES": ["Pain Relief", "Cold & Flu", "Vitamins"],

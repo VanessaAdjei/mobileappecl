@@ -43,7 +43,7 @@ class _ItemPageState extends State<ItemPage> {
           final productData = data['data']['product'] ?? {};
           final inventoryData = data['data']['inventory'] ?? {};
 
-          // 1. Get product name (fallback to formatted url_name)
+
           String name = 'Unknown Product';
           if (inventoryData['url_name'] != null) {
             name = inventoryData['url_name']
@@ -206,7 +206,6 @@ class _ItemPageState extends State<ItemPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Product Image - Larger display
                 Container(
                   height: 200,
                   margin: const EdgeInsets.symmetric(vertical: 10),
@@ -330,11 +329,12 @@ class _ItemPageState extends State<ItemPage> {
                           // Product Name with Icon
                           Row(
                             children: [
-                              Icon(Icons.medical_services, size: 20, color: Colors.green.shade700),
+                              // Icon(Icons.medical_services, size: 20, color: Colors.green.shade700),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
                                   product['name'] ?? 'No name available',
+                                  textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -347,30 +347,35 @@ class _ItemPageState extends State<ItemPage> {
                           const SizedBox(height: 10),
 
                           // Price Highlight
-                          Container(
+                            Center(
+                            child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(8),
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              'GHS ${price.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.green.shade800,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            'GHS ${price.toStringAsFixed(2)}',
+                            style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.green.shade800,
+                            fontWeight: FontWeight.bold,
                             ),
-                          ),
+                            ),
+                            ),
+                            ),
                           const SizedBox(height: 14),
 
                           // Section Title
-                          const Text(
-                            'Product Details',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                          Center(
+                            child: Text(
+                              'Product Details',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
                             ),
                           ),
                           const Divider(height: 16, thickness: 1),
@@ -474,7 +479,7 @@ class _ItemPageState extends State<ItemPage> {
                               id: uuid.v4(),
                               name: product['name'] ?? 'Unknown Product',
                               price: price,
-                              image: thumbnail,
+                              image: thumbnail.isNotEmpty ? thumbnail : 'https://eclcommerce.ernestchemists.com.gh/storage/default-product.png',
                               quantity: quantity,
                             );
                             Provider.of<CartProvider>(context, listen: false)
@@ -486,6 +491,7 @@ class _ItemPageState extends State<ItemPage> {
                               ),
                             );
                           },
+
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(

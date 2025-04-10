@@ -7,6 +7,7 @@ class Product {
   final String price;
   final String thumbnail;
   final String quantity;
+  final String category;
 
   Product({
     required this.id,
@@ -17,6 +18,7 @@ class Product {
     required this.price,
     required this.thumbnail,
     required this.quantity,
+    required this.category,
   });
 
 
@@ -30,6 +32,7 @@ class Product {
       price: json['price']?.toString() ?? '0.00',
       thumbnail: json['thumbnail'] ?? '',
       quantity: json['quantity'] ?? '',
+      category: json['category'] ?? '',
     );
   }
 }

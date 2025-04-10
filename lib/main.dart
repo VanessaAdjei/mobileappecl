@@ -1,7 +1,5 @@
 import 'package:eclapp/pages/auth_service.dart';
 import 'package:eclapp/pages/categories.dart';
-import 'package:eclapp/pages/product_model.dart';
-import 'package:eclapp/pages/product_provider.dart';
 import 'package:eclapp/pages/signinpage.dart';
 import 'package:flutter/material.dart';
 import 'package:eclapp/pages/splashscreen.dart';
@@ -24,7 +22,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => CartProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => ProductProvider()),
+
       ],
       child: const MyApp(),
     ),
@@ -37,7 +35,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final Future<List<Object>> productsFuture = AuthService().getAllProducts();
+
 
 
     return MaterialApp(
