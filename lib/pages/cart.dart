@@ -226,6 +226,7 @@ class _CartState extends State<Cart> {
                                     ],
                                   ),
                                 ),
+                                // In the ListView.builder itemBuilder where the remove button is defined:
                                 Row(
                                   children: [
                                     IconButton(
@@ -233,6 +234,9 @@ class _CartState extends State<Cart> {
                                       onPressed: () {
                                         if (item.quantity > 1) {
                                           context.read<CartProvider>().updateQuantity(index, item.quantity - 1);
+                                        } else {
+                                          // If quantity is 1, remove the item completely
+                                          context.read<CartProvider>().removeFromCart(index);
                                         }
                                       },
                                     ),
@@ -323,7 +327,6 @@ class _CartState extends State<Cart> {
 
           const SizedBox(height: 10),
 
-
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -412,7 +415,7 @@ class _CartState extends State<Cart> {
     );
   }
 
-  // CITY DROPDOWN (Changes based on Region)
+
   Widget _buildCityDropdown() {
     return DropdownButtonFormField<String>(
       decoration: InputDecoration(labelText: 'Select City'),

@@ -558,24 +558,24 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
                 actions: [
-                  Container(
-                    margin: EdgeInsets.only(right: 20.0),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.green[700],
-                    ),
-                    child: IconButton(
-                      icon: Icon(Icons.shopping_cart, color: Colors.white),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const Cart(),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                  // Container(
+                  //   margin: EdgeInsets.only(right: 20.0),
+                  //   decoration: BoxDecoration(
+                  //     shape: BoxShape.circle,
+                  //     color: Colors.green[700],
+                  //   ),
+                  //   child: IconButton(
+                  //     icon: Icon(Icons.shopping_cart, color: Colors.white),
+                  //     onPressed: () {
+                  //       Navigator.push(
+                  //         context,
+                  //         MaterialPageRoute(
+                  //           builder: (context) => const Cart(),
+                  //         ),
+                  //       );
+                  //     },
+                  //   ),
+                  // ),
                 ],
               ),
               SliverToBoxAdapter(
