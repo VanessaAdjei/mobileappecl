@@ -1,8 +1,6 @@
-import 'package:eclapp/pages/profile.dart';
-import 'package:eclapp/pages/storeselection.dart'; // Import this if not already
+
 import 'package:flutter/material.dart';
 import 'Cart.dart';
-import 'CartItems.dart';
 import 'bottomnav.dart';
 import 'categories.dart';
 import 'homepage.dart';
@@ -13,7 +11,6 @@ class StoreSelectionPage extends StatefulWidget {
 }
 
 class _StoreSelectionPageState extends State<StoreSelectionPage> {
-  int _selectedIndex = 0;
 
   final List<String> regions = ['Greater Accra', 'Volta', 'Ashanti', 'Northern'];
   final List<City> cities = [
@@ -39,29 +36,6 @@ class _StoreSelectionPageState extends State<StoreSelectionPage> {
     Store(name: 'Store G', city: 'City 7', region: 'Volta'),
   ];
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    switch (index) {
-      case 0:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
-        break;
-      case 1:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const Cart()));
-        break;
-      case 2:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => CategoryPage()));
-        break;
-      case 3:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => Profile()));
-        break;
-      case 4:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => StoreSelectionPage()));
-        break;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -192,14 +166,14 @@ class _StoreSelectionPageState extends State<StoreSelectionPage> {
               Expanded(
                 child: ListView(
                   children: _getFilteredStores()
-                      .map((store) => StoreListItem(store: store)) // Use the extracted widget
+                      .map((store) => StoreListItem(store: store))
                       .toList(),
                 ),
               ),
             ],
           ),
         ),
-        bottomNavigationBar: const CustomBottomNav(currentIndex: 4),
+        bottomNavigationBar: const CustomBottomNav(currentIndex: 0),
       ),
     );
   }

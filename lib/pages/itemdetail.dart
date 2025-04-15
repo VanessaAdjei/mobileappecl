@@ -7,6 +7,7 @@ import 'Cart.dart';
 import 'CartItem.dart';
 import 'bottomnav.dart';
 import 'cartprovider.dart';
+import 'package:html/parser.dart' show parse;
 
 class ItemPage extends StatefulWidget {
   final String urlName;
@@ -29,6 +30,78 @@ class _ItemPageState extends State<ItemPage> {
     _productFuture = fetchProductDetails(widget.urlName);
   }
 
+  String _cleanHtml(String html) {
+    try {
+      final document = parse(html);
+      return document.body?.text ?? html;
+    } catch (e) {
+      return html.replaceAll(RegExp(r'<[^>]*>'), ' ');
+    }
+  }
+
+  Widget _buildDescriptionSection(String? description) {
+    final cleanText = description != null
+        ? _cleanHtml(description).trim()
+        : 'No description available';
+
+    if (cleanText.isEmpty) return _buildNoDescription();
+
+    final isLong = cleanText.length > 100;
+    final displayText = isDescriptionExpanded
+        ? cleanText
+        : isLong ? '${cleanText.substring(0, 100)}...' : cleanText;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          displayText,
+          style: _descriptionTextStyle(),
+        ),
+        if (isLong) _buildReadMoreButton(),
+      ],
+    );
+  }
+
+  Widget _buildReadMoreButton() {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: TextButton(
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.zero,
+          minimumSize: const Size(40, 30),
+        ),
+        onPressed: () => setState(() => isDescriptionExpanded = !isDescriptionExpanded),
+        child: Text(
+          isDescriptionExpanded ? 'Read Less' : 'Read More',
+          style: TextStyle(
+            color: Colors.green.shade700,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+
+  Widget _buildNoDescription() {
+    return const Text(
+      'No description available.',
+      style: TextStyle(
+        fontStyle: FontStyle.italic,
+        fontSize: 13,
+        color: Colors.grey,
+      ),
+    );
+  }
+
+  TextStyle _descriptionTextStyle() {
+    return const TextStyle(
+      fontSize: 13,
+      color: Colors.black54,
+      height: 1.4,
+    );
+  }
 
   Future<Map<String, dynamic>> fetchProductDetails(String urlName) async {
     try {
@@ -38,11 +111,9 @@ class _ItemPageState extends State<ItemPage> {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-
         if (data.containsKey('data')) {
           final productData = data['data']['product'] ?? {};
           final inventoryData = data['data']['inventory'] ?? {};
-
 
           String name = 'Unknown Product';
           if (inventoryData['url_name'] != null) {
@@ -54,13 +125,11 @@ class _ItemPageState extends State<ItemPage> {
                 .join(' ');
           }
 
-          // 2. Get thumbnail URL (first image as fallback)
           String thumbnail = '';
           if (productData['images'] != null && productData['images'].isNotEmpty) {
             thumbnail = productData['images'][0]['url'] ?? '';
           }
 
-          // 3. Get price
           double price = 0.0;
           if (inventoryData['price'] != null) {
             price = inventoryData['price'] is int
@@ -70,7 +139,6 @@ class _ItemPageState extends State<ItemPage> {
                 : double.tryParse(inventoryData['price'].toString().replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
           }
 
-          // 4. Get category
           String category = '';
           if (productData['categories'] != null && productData['categories'].isNotEmpty) {
             category = productData['categories'][0]['description'] ?? '';
@@ -120,11 +188,52 @@ class _ItemPageState extends State<ItemPage> {
     ];
   }
 
-  String _parseHtml(String htmlString) {
-    return htmlString
-        .replaceAll(RegExp(r'<[^>]*>'), '')
-        .replaceAll(RegExp(r'&[^;]+;'), '')
-        .trim();
+
+
+
+  void showTopSnackBar(BuildContext context, String message, {Duration? duration}) {
+    final overlay = Overlay.of(context);
+
+    late final OverlayEntry overlayEntry;
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).padding.top + 50,
+        left: 20,
+        right: 20,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.green[900],
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+
+    Future.delayed(duration ?? const Duration(seconds: 2), () {
+      overlayEntry.remove();
+    });
   }
 
   @override
@@ -243,7 +352,6 @@ class _ItemPageState extends State<ItemPage> {
                   ),
                 ),
 
-                // Category Display
                 if (category.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
@@ -256,7 +364,6 @@ class _ItemPageState extends State<ItemPage> {
                     ),
                   ),
 
-                // Quantity Selector
                 Center(
                   child: Material(
                     elevation: 2,
@@ -278,12 +385,7 @@ class _ItemPageState extends State<ItemPage> {
                                 if (quantity > 1) {
                                   quantity--;
                                 } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Quantity cannot be less than 1'),
-                                      duration: Duration(seconds: 1),
-                                    ),
-                                  );
+                                  showTopSnackBar(context, 'Quantity cannot be less than 1');
                                 }
                               });
                             },
@@ -304,7 +406,6 @@ class _ItemPageState extends State<ItemPage> {
                   ),
                 ),
 
-                // Product Info
                 Material(
                   elevation: 4,
                   borderRadius: BorderRadius.circular(12),
@@ -326,10 +427,8 @@ class _ItemPageState extends State<ItemPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Product Name with Icon
                           Row(
                             children: [
-                              // Icon(Icons.medical_services, size: 20, color: Colors.green.shade700),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
@@ -346,27 +445,25 @@ class _ItemPageState extends State<ItemPage> {
                           ),
                           const SizedBox(height: 10),
 
-                          // Price Highlight
-                            Center(
+                          Center(
                             child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                            color: Colors.green.shade50,
-                            borderRadius: BorderRadius.circular(8),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'GHS ${price.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.green.shade800,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
-                            child: Text(
-                            'GHS ${price.toStringAsFixed(2)}',
-                            style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.green.shade800,
-                            fontWeight: FontWeight.bold,
-                            ),
-                            ),
-                            ),
-                            ),
+                          ),
                           const SizedBox(height: 14),
 
-                          // Section Title
                           Center(
                             child: Text(
                               'Product Details',
@@ -381,66 +478,13 @@ class _ItemPageState extends State<ItemPage> {
                           const Divider(height: 16, thickness: 1),
                           const SizedBox(height: 4),
 
-                          // Description
-                          if (product['description'] != null)
-                            LayoutBuilder(
-                              builder: (context, constraints) {
-                                final description = _parseHtml(product['description']);
-                                final isLong = description.length > 120;
-                                final displayText = isDescriptionExpanded
-                                    ? description
-                                    : (isLong ? '${description.substring(0, 120)}...' : description);
-
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      displayText,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.black54,
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                    if (isLong)
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: TextButton(
-                                          style: TextButton.styleFrom(
-                                            padding: EdgeInsets.zero,
-                                            minimumSize: const Size(40, 30),
-                                          ),
-                                          onPressed: () => setState(() => isDescriptionExpanded = !isDescriptionExpanded),
-                                          child: Text(
-                                            isDescriptionExpanded ? 'Read Less' : 'Read More',
-                                            style: TextStyle(
-                                              color: Colors.green.shade700,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                );
-                              },
-                            )
-                          else
-                            const Text(
-                              'No description available.',
-                              style: TextStyle(
-                                fontStyle: FontStyle.italic,
-                                fontSize: 13,
-                                color: Colors.grey,
-                              ),
-                            ),
+                          _buildDescriptionSection(product['description']),
                         ],
                       ),
                     ),
                   ),
-                )
-                ,
+                ),
 
-                // Total and Add to Cart
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -484,14 +528,8 @@ class _ItemPageState extends State<ItemPage> {
                             );
                             Provider.of<CartProvider>(context, listen: false)
                                 .addToCart(newItem);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Added to cart'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
+                            showTopSnackBar(context, 'Added to cart');
                           },
-
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
@@ -514,7 +552,6 @@ class _ItemPageState extends State<ItemPage> {
                   ],
                 ),
 
-                // Related Products Section
                 const SizedBox(height: 20),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),

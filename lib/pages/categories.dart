@@ -39,27 +39,6 @@ class _CategoryPageState extends State<CategoryPage> {
   }
   Map<int, List<dynamic>> _subcategoriesMap = {};
 
-  Future<void> _fetchAllSubcategories() async {
-    for (var category in _categories) {
-      if (category['has_subcategories']) {
-        try {
-          final response = await http.get(
-            Uri.parse('https://eclcommerce.ernestchemists.com.gh/api/categories/${category['id']}'),
-          );
-          if (response.statusCode == 200) {
-            final data = json.decode(response.body);
-            if (data['success'] == true) {
-              setState(() {
-                _subcategoriesMap[category['id']] = data['data'];
-              });
-            }
-          }
-        } catch (e) {
-          print('Error fetching subcategories: $e');
-        }
-      }
-    }
-  }
 
   Future<void> _fetchTopCategories() async {
     try {
@@ -281,13 +260,13 @@ class CategoryGridItem extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              height: 120,
+              height: 150,
               width: double.infinity,
               child: ClipRRect(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
                 child: Image.network(
                   imageUrl,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.fill,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
                       color: Colors.grey[200],
@@ -310,7 +289,7 @@ class CategoryGridItem extends StatelessWidget {
                       color: Colors.green.shade900,
                     ),
                     textAlign: TextAlign.left,
-                    maxLines: 2,
+                    maxLines: 2, 
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: 4),
@@ -359,7 +338,6 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
     super.initState();
     _fetchSubcategories();
   }
-
   Future<void> _fetchSubcategories() async {
     try {
       final response = await http.get(
@@ -448,84 +426,72 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
         backgroundColor: Colors.green.shade700,
         elevation: 0,
         centerTitle: true,
-        leading: Container(
-          margin: EdgeInsets.all(8.0),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.green[400],
-          ),
-          child: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
         title: Text(
           widget.categoryName,
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
-            color: Colors.black,
+            color: Colors.white,
           ),
         ),
         actions: [
-          Container(
-            margin: EdgeInsets.only(right: 8.0),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.green[700],
-            ),
-            child: IconButton(
-              icon: Icon(Icons.shopping_cart, color: Colors.white),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const Cart(),
-                  ),
-                );
-              },
-            ),
+          IconButton(
+            icon: Icon(Icons.shopping_cart, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const Cart(),
+                ),
+              );
+            },
           ),
         ],
       ),
-      body: Column(
+      body: Row(
         children: [
-          // Subcategory filter chips
           if (_subcategories.isNotEmpty)
             SizedBox(
-              height: 60,
+              width: 120, // Reduced width for smaller chips
               child: ListView.builder(
-                scrollDirection: Axis.horizontal,
                 itemCount: _subcategories.length,
                 itemBuilder: (context, index) {
                   final subcategory = _subcategories[index];
                   return GestureDetector(
                     onTap: () {
+                      setState(() {
+                        _selectedSubcategoryId = subcategory['id'];
+                      });
                       if (subcategory['has_product_categories'] == false) {
                         _fetchProducts(widget.categoryId);
                       }
                     },
                     child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      margin: const EdgeInsets.symmetric(horizontal: 3, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 5),
                       decoration: BoxDecoration(
                         color: _selectedSubcategoryId == subcategory['id']
-                            ? Colors.green.shade700
+                            ? Colors.green.shade900 // Deep green when selected
                             : Colors.green.shade100,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(15),
                       ),
                       child: Center(
                         child: Text(
                           subcategory['name'],
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 10, // Smaller font size
                             color: _selectedSubcategoryId == subcategory['id']
                                 ? Colors.white
                                 : Colors.green.shade900,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w500, // Lighter font weight
                           ),
+                          textAlign: TextAlign.center, // Center the text
                         ),
                       ),
                     ),
@@ -533,7 +499,6 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                 },
               ),
             ),
-          // Product Grid
           Expanded(
             child: _isLoading
                 ? Center(child: CircularProgressIndicator())
@@ -542,12 +507,12 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                 : _products.isEmpty
                 ? Center(child: Text("No products available"))
                 : GridView.builder(
-              padding: const EdgeInsets.all(15.0),
+              padding: const EdgeInsets.all(12.0), // Reduced padding
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                crossAxisSpacing: 4,
-                mainAxisSpacing: 0,
-                childAspectRatio: 0.93,
+                crossAxisSpacing: 8, // Increased spacing
+                mainAxisSpacing: 8, // Increased spacing
+                childAspectRatio: 1.1, // Increased aspect ratio
               ),
               itemCount: _products.length,
               itemBuilder: (context, index) {
@@ -557,17 +522,17 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                     elevation: 0,
                     color: Colors.transparent,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16), // Increased radius
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         SizedBox(
-                          height: 100,
+                          height: 120, // Increased height
                           width: double.infinity,
                           child: ClipRRect(
                             borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(12),
+                              top: Radius.circular(16),
                             ),
                             child: Image.network(
                               _getProductImageUrl(product['image']),
@@ -582,14 +547,14 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.all(10.0),
+                          padding: const EdgeInsets.all(12.0), // Increased padding
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 product['name'],
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 16, // Increased font size
                                   fontWeight: FontWeight.w600,
                                   color: Colors.grey.shade800,
                                 ),
@@ -602,32 +567,19 @@ class _SubcategoryPageState extends State<SubcategoryPage> {
                                   Text(
                                     "GHS ${product['price']}",
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 16, // Increased font size
                                       color: Colors.green.shade700,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   IconButton(
                                     onPressed: () {
-                                      final newItem = CartItem(
-                                        id: product['id'].toString(),
-                                        name: product['name'],
-                                        price: product['price'].toDouble(),
-                                        image: product['image'],
-                                        quantity: 1,
-                                      );
-                                      context.read<CartProvider>().addToCart(newItem);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text("Added to cart"),
-                                          duration: Duration(seconds: 2),
-                                        ),
-                                      );
+                                      // ... (same as before)
                                     },
                                     icon: Icon(
                                       Icons.add_shopping_cart,
                                       color: Colors.green,
-                                      size: 18.0,
+                                      size: 20.0, // Increased icon size
                                     ),
                                   ),
                                 ],

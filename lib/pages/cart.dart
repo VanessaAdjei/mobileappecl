@@ -31,6 +31,52 @@ class _CartState extends State<Cart> {
     super.initState();
   }
 
+
+  void showTopSnackBar(BuildContext context, String message, {Duration? duration}) {
+    final overlay = Overlay.of(context);
+
+    late final OverlayEntry overlayEntry;
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).padding.top + 50,
+        left: 20,
+        right: 20,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.green[900],
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+
+    Future.delayed(duration ?? const Duration(seconds: 2), () {
+      overlayEntry.remove();
+    });
+  }
+
   Map<String, Map<String, Map<String, double>>> locationFees = {
     'Greater Accra': {
       'Accra': {'Madina': 5.00, 'Osu': 6.50},
@@ -114,9 +160,11 @@ class _CartState extends State<Cart> {
       context.read<CartProvider>().clearCart();
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Purchase successful!")),
-    );
+    showTopSnackBar(context, 'Purchase Successful');
+
+    // ScaffoldMessenger.of(context).showSnackBar(
+    //   const SnackBar(content: Text("Purchase successful!")),
+    // );
   }
 
 

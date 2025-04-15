@@ -1,7 +1,5 @@
 import 'package:eclapp/pages/profile.dart';
-import 'package:eclapp/pages/storelocation.dart';
 import 'package:flutter/material.dart';
-
 import 'Cart.dart';
 import 'categories.dart';
 import 'homepage.dart';
@@ -41,12 +39,6 @@ class CustomBottomNav extends StatelessWidget {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => Profile()),
-        );
-        break;
-      case 4:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => StoreSelectionPage()),
         );
         break;
     }
@@ -93,10 +85,6 @@ class CustomBottomNav extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.location_city_sharp),
-            label: 'Stores',
           ),
         ],
       ),
